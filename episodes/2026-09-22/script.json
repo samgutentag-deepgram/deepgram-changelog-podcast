@@ -1,0 +1,155 @@
+[
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Intro",
+    "text": "Hello, this is Brooke with The Deepgram Changelog. Changelogs from the week of September thirteenth to September nineteenth. Links to every docs page mentioned are in the show notes.",
+    "start_seconds": 0.0
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Breaking changes and action required",
+    "text": "First up, breaking changes and action required. There's one this week. The Java SDK, version zero point ten, changes how you set speech speed, and that's a breaking change. Check the migration guide before you upgrade.",
+    "start_seconds": 11.5
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Breaking changes and action required",
+    "text": "Drew has this week's launches.",
+    "start_seconds": 27.47
+  },
+  {
+    "role": "host",
+    "speaker_key": "Drew",
+    "voice_id": "flux-drew-en",
+    "expressivity": 1,
+    "chapter": "Launches",
+    "text": "Thanks, Brooke. Nova-3 Pharma is out. It's a new speech-to-text model tuned for pharmaceutical vocabulary, especially drug names, and it's aimed at pharmacy and healthcare voice agents. It's English only, it works for both batch and streaming, and it's live on the hosted API now. The Models and Languages Overview has the details.",
+    "start_seconds": 30.33
+  },
+  {
+    "role": "host",
+    "speaker_key": "Drew",
+    "voice_id": "flux-drew-en",
+    "expressivity": 1,
+    "chapter": "Launches",
+    "text": "That's the launch news. Back to you, Brooke.",
+    "start_seconds": 50.62
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Quick hits",
+    "text": "Thanks, Drew. Now some quick hits. The India endpoint is now generally available, for anyone who needs their data processed inside India. It supports speech-to-text, text-to-speech, the Voice Agent API, and Text Intelligence, and your existing API keys work with it. The Regional Endpoints page has the URLs.",
+    "start_seconds": 53.88
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Quick hits",
+    "text": "That's it for quick hits. Kit has the Voice Agent updates next.",
+    "start_seconds": 75.61
+  },
+  {
+    "role": "host",
+    "speaker_key": "Kit",
+    "voice_id": "flux-kit-en",
+    "expressivity": 1,
+    "chapter": "Voice Agent",
+    "text": "Thanks, Brooke. Last month, Flux added a way for your app to end a user's turn itself, for the moments you know they're done before the model does, like when someone lets go of a push-to-talk button. That control is now built into the Python, JavaScript, and Java SDKs. The Flux turn-taking docs cover how it works.",
+    "start_seconds": 81.99
+  },
+  {
+    "role": "host",
+    "speaker_key": "Kit",
+    "voice_id": "flux-kit-en",
+    "expressivity": 1,
+    "chapter": "Voice Agent",
+    "text": "Cole has the text-to-speech updates next.",
+    "start_seconds": 99.88
+  },
+  {
+    "role": "host",
+    "speaker_key": "Cole",
+    "voice_id": "flux-cole-en",
+    "expressivity": 1,
+    "chapter": "Text-to-Speech",
+    "text": "Thanks, Kit. On the text-to-speech side, two Flux TTS controls are now in the SDKs. Expressivity sets how calm or animated a voice sounds inside a Voice Agent. And the wider speed range from August, from half speed up to one and a half times, is now available in the Python, JavaScript, and Java SDKs. The Expressivity page has the details.",
+    "start_seconds": 104.1
+  },
+  {
+    "role": "host",
+    "speaker_key": "Cole",
+    "voice_id": "flux-cole-en",
+    "expressivity": 1,
+    "chapter": "Text-to-Speech",
+    "text": "Elise has the developer experience updates next.",
+    "start_seconds": 127.75
+  },
+  {
+    "role": "host",
+    "speaker_key": "Elise",
+    "voice_id": "flux-elise-en",
+    "expressivity": 1,
+    "chapter": "Developer experience",
+    "text": "Thanks, Cole. To close things out, developer experience. New SDK versions are out: Python seven point nine, JavaScript five point eleven, and Java zero point ten. They carry the Voice Agent and text-to-speech updates you just heard about. Release notes for each one are in the show notes.",
+    "start_seconds": 131.97
+  },
+  {
+    "role": "host",
+    "speaker_key": "Elise",
+    "voice_id": "flux-elise-en",
+    "expressivity": 1,
+    "chapter": "Developer experience",
+    "text": "Two docs corrections, too. The example for creating short-lived tokens in the Browser Agent SDK docs used the wrong field name for the token lifetime. The right field is TTL underscore seconds, and the Token-Based Authentication guide has the corrected version. The Browser Agent SDK docs also described client-side voice activity detection, which never shipped. Barge-in works, and it's handled on the server. The Browser Agent pages now match what actually shipped.",
+    "start_seconds": 150.18
+  },
+  {
+    "role": "host",
+    "speaker_key": "Elise",
+    "voice_id": "flux-elise-en",
+    "expressivity": 1,
+    "chapter": "Developer experience",
+    "text": "That's developer experience. Back to you, Brooke.",
+    "start_seconds": 183.11
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Outro",
+    "text": "Thanks, Elise. That's the week. This episode was voiced start to finish by Deepgram Flux TTS, and rendering it cost eighteen cents, at the pay as you go rate. Looking to start building with Deepgram? New Console accounts start with a two hundred dollar credit, which covers more than eleven hundred twenty five episodes like this one.",
+    "start_seconds": 187.57
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Outro",
+    "text": "As a bonus through December thirty first of this year, every dollar you spend on Flux TTS is matched with a dollar in bonus credits, up to five hundred dollars per project. What you earn never expires, and it works on any Deepgram API in that project. It's open to Pay As You Go and Growth projects, and the full terms are in the show notes.",
+    "start_seconds": 205.46
+  },
+  {
+    "role": "host",
+    "speaker_key": "Brooke",
+    "voice_id": "flux-brooke-en",
+    "expressivity": 1,
+    "chapter": "Outro",
+    "text": "Need more help, or have questions about anything in today's episode? Email support at deepgram dot com and include the dg request ID header from the failing response, it's the fastest way to get a fix. For questions and a second pair of eyes, find us on Discord at D P G R dot A M slash discord, or in GitHub Discussions under the Deepgram org. If you think something's down, check status dot deepgram dot com first. The full changelog can be found at developers dot deepgram dot com slash changelog. See you next Tuesday!",
+    "start_seconds": 226.87
+  }
+]

@@ -1,0 +1,30 @@
+{
+  "_about": "Fixed cast, same every episode. Confirmed by Sam 2026-09-25. Keys are segment headings in script.md; any segment not listed goes to the anchor. `expressivity` applies to every voice (Flux TTS beta, -2 to 2); Sam picked 1 by ear on 2026-09-25 from experiments/expressivity.",
+  "anchor": {
+    "name": "Brooke",
+    "voice": "flux-brooke-en"
+  },
+  "segments": {
+    "Launches": {
+      "name": "Drew",
+      "voice": "flux-drew-en"
+    },
+    "Voice Agent": {
+      "name": "Kit",
+      "voice": "flux-kit-en"
+    },
+    "Speech-to-Text": {
+      "name": "Miles",
+      "voice": "flux-miles-en"
+    },
+    "Text-to-Speech": {
+      "name": "Cole",
+      "voice": "flux-cole-en"
+    },
+    "Developer experience": {
+      "name": "Elise",
+      "voice": "flux-elise-en"
+    }
+  },
+  "expressivity": 1
+}

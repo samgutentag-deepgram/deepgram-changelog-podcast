@@ -1,0 +1,12 @@
+{
+  "voice": "flux-brooke-en",
+  "cast": "docs/cast.json",
+  "expressivity": 1,
+  "characters": 3925,
+  "duration_s": 261.1,
+  "cost_usd": 0.1766,
+  "rate_usd_per_1k": 0.045,
+  "plan": "payg",
+  "episodes_per_200_credit": 1132,
+  "new_calls_this_run": 0
+}

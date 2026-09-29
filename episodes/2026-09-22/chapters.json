@@ -1,0 +1,164 @@
+{
+  "version": "1.2.0",
+  "chapters": [
+    {
+      "title": "Intro",
+      "startTime": 0.0,
+      "endTime": 11.5,
+      "links": []
+    },
+    {
+      "title": "Breaking changes and action required",
+      "startTime": 11.5,
+      "endTime": 30.33,
+      "links": [
+        {
+          "label": "Java SDK v0.10.0 release",
+          "url": "https://github.com/deepgram/deepgram-java-sdk/releases/tag/v0.10.0"
+        },
+        {
+          "label": "Java SDK v0.9 to v0.10 migration guide",
+          "url": "https://github.com/deepgram/deepgram-java-sdk/blob/main/docs/Migrating-v0.9-to-v0.10.md"
+        }
+      ]
+    },
+    {
+      "title": "Launches",
+      "startTime": 30.33,
+      "endTime": 53.88,
+      "links": [
+        {
+          "label": "Nova-3 Pharma changelog entry",
+          "url": "https://developers.deepgram.com/changelog/2026/9/17"
+        },
+        {
+          "label": "Models & Languages Overview",
+          "url": "https://developers.deepgram.com/docs/models-languages-overview#nova-3"
+        }
+      ]
+    },
+    {
+      "title": "Quick hits",
+      "startTime": 53.88,
+      "endTime": 81.99,
+      "links": [
+        {
+          "label": "India endpoint GA",
+          "url": "https://developers.deepgram.com/changelog/2026/9/15"
+        },
+        {
+          "label": "Regional Endpoints",
+          "url": "https://developers.deepgram.com/reference/regional-endpoints"
+        }
+      ]
+    },
+    {
+      "title": "Voice Agent",
+      "startTime": 81.99,
+      "endTime": 104.1,
+      "links": [
+        {
+          "label": "SDK releases, 2026-09-14",
+          "url": "https://developers.deepgram.com/changelog/2026/9/14"
+        },
+        {
+          "label": "Force End Turn",
+          "url": "https://developers.deepgram.com/docs/flux/force-end-turn"
+        },
+        {
+          "label": "Flexible turn-taking control for Flux, 2026-08-28",
+          "url": "https://developers.deepgram.com/changelog/2026/8/28"
+        },
+        {
+          "label": "Bring Your Own Turn Detection",
+          "url": "https://developers.deepgram.com/docs/flux/own-turn-detection"
+        }
+      ]
+    },
+    {
+      "title": "Text-to-Speech",
+      "startTime": 104.1,
+      "endTime": 131.97,
+      "links": [
+        {
+          "label": "TTS Expressivity",
+          "url": "https://developers.deepgram.com/docs/tts-expressivity"
+        },
+        {
+          "label": "Wider speed range for Flux TTS, 2026-08-31",
+          "url": "https://developers.deepgram.com/changelog/2026/8/31"
+        }
+      ]
+    },
+    {
+      "title": "Developer experience",
+      "startTime": 131.97,
+      "endTime": 187.57,
+      "links": [
+        {
+          "label": "Python SDK v7.9.0",
+          "url": "https://github.com/deepgram/deepgram-python-sdk/releases/tag/v7.9.0"
+        },
+        {
+          "label": "JavaScript SDK v5.11.0",
+          "url": "https://github.com/deepgram/deepgram-js-sdk/releases/tag/v5.11.0"
+        },
+        {
+          "label": "Java SDK v0.10.0",
+          "url": "https://github.com/deepgram/deepgram-java-sdk/releases/tag/v0.10.0"
+        },
+        {
+          "label": "Correction: token lifetime uses ttl_seconds",
+          "url": "https://developers.deepgram.com/changelog/2026/9/18"
+        },
+        {
+          "label": "Token-Based Authentication",
+          "url": "https://developers.deepgram.com/guides/fundamentals/token-based-authentication"
+        },
+        {
+          "label": "Correction: Browser Agent SDK has no client-side VAD",
+          "url": "https://developers.deepgram.com/changelog/2026/9/18"
+        },
+        {
+          "label": "Browser Agent JavaScript SDK",
+          "url": "https://developers.deepgram.com/docs/browser-agent-javascript"
+        }
+      ]
+    },
+    {
+      "title": "Outro",
+      "startTime": 187.57,
+      "endTime": 261.11,
+      "links": [
+        {
+          "label": "Deepgram pricing",
+          "url": "https://deepgram.com/pricing"
+        },
+        {
+          "label": "Flux TTS credit match terms",
+          "url": "https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions"
+        },
+        {
+          "label": "Sign up for Console",
+          "url": "https://console.deepgram.com"
+        },
+        {
+          "label": "Discord",
+          "url": "https://dpgr.am/discord"
+        },
+        {
+          "label": "GitHub Discussions",
+          "url": "https://github.com/orgs/deepgram/discussions"
+        },
+        {
+          "label": "status.deepgram.com",
+          "url": "https://status.deepgram.com"
+        },
+        {
+          "label": "support@deepgram.com",
+          "url": "mailto:support@deepgram.com"
+        }
+      ]
+    }
+  ]
+}

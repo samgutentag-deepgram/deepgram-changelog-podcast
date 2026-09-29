@@ -1,0 +1,39 @@
+{
+  "id": "2026-09-22",
+  "release_date": "2026-09-22",
+  "window": {
+    "start": "2026-09-13",
+    "end": "2026-09-19"
+  },
+  "title": "Week of September 13 to 19, 2026",
+  "summary": "Java SDK 0.10 ships a breaking change, Nova-3 Pharma launches, the India endpoint goes GA, app-controlled turn endings reach the Python, JavaScript, and Java SDKs, and two Browser Agent docs pages are corrected.",
+  "host": "Brooke",
+  "voice_id": "flux-brooke-en",
+  "duration_seconds": 261.1,
+  "cast": [
+    "Cole",
+    "Drew",
+    "Elise",
+    "Kit"
+  ],
+  "hosts": [
+    "Brooke",
+    "Drew",
+    "Kit",
+    "Cole",
+    "Elise"
+  ],
+  "unlisted": false,
+  "cost": {
+    "characters": 3925,
+    "usd": 0.17662,
+    "rate_usd_per_1k": 0.045,
+    "plan": "payg",
+    "credit_usd": 200.0,
+    "episodes_per_credit": 1132,
+    "episodes_per_year": 52,
+    "year_usd": 9.18,
+    "pricing_url": "https://deepgram.com/pricing",
+    "pricing_as_of": "2026-09-25"
+  }
+}
