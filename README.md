@@ -99,6 +99,9 @@ At 5am Pacific every Tuesday, the machine's own cron (supercronic, reading `cron
 `scripts/weekly_run.py`. That wraps `scripts/produce.py --weekly`, which refreshes the changelog and
 writes, renders, checks, and illustrates the episode for the Sunday to Saturday that just ended.
 It then rebuilds the feed and the back catalog on the volume, so there's nothing to deploy.
+If the run fails, it tries again up to three times, five minutes apart. Set
+`CHANGELOG_PUSHOVER_TOKEN` and `CHANGELOG_PUSHOVER_USER` (see `.env.sample`) to get a push for
+each retry and for the result (`scripts/alerts.py`).
 
 If a week had no changelog entries, there's no episode that week. Each run also re-checks the four
 weeks before it, so an entry that shows up late still gets an episode.
@@ -173,7 +176,8 @@ product has a changelog that nobody reads either, here's the swap.
 An `llms.txt` isn't required. The pipeline needs every changelog entry with a date and its full
 text, and it can get that from either of two places. `scripts/changelog_source.py` is the one file
 that knows the difference, and both paths hand the rest of the pipeline the same thing: one
-markdown body per day, where each `## ` heading is one entry.
+markdown body per day, where each `## ` heading is one entry. The picture version is
+[`docs/changelog-sources.html`](docs/changelog-sources.html).
 
 - **An `llms.txt` index.** A markdown list of links, one per changelog day, each pointing at a
   clean `.md` page. The date comes from the link's path (`/2026/9/24.md`) or its text

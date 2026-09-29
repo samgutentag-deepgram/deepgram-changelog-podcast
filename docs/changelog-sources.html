@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<!--
+  CANONICAL. Source of truth for the "llms.txt or RSS" guide. Edit it here. The claude.ai artifact
+  (https://claude.ai/artifact/LeKrgbr4wMWWJPvfWVnRAN) is a derived copy: publish this file's content minus the <!DOCTYPE>, <html>, <head>, and <body>
+  wrapper tags. Styling follows docs/how-it-works.html.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Do You Need llms.txt?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f3f5f7; --surface: #ffffff; --ink: #14171c; --muted: #5b6573; --line: #d9dee5; --soft: #e9edf1;
+    --idx: #0b8a55; --idx-soft: #dff5ea; --feed: #c75a0c; --feed-soft: #fdebdc;
+    --bad: #c2334a; --bad-soft: #fbe2e6;
+    --display: 'Bricolage Grotesque', 'Avenir Next', system-ui, sans-serif;
+    --body: 'Atkinson Hyperlegible', system-ui, -apple-system, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0b0d10; --surface: #14181d; --ink: #eef1f5; --muted: #9aa4b2; --line: #262c34; --soft: #1b2027;
+      --idx: #13ef95; --idx-soft: #0f2a1f; --feed: #ff9a4d; --feed-soft: #2f1c0e;
+      --bad: #ff7a8f; --bad-soft: #33161c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0b0d10; --surface: #14181d; --ink: #eef1f5; --muted: #9aa4b2; --line: #262c34; --soft: #1b2027;
+    --idx: #13ef95; --idx-soft: #0f2a1f; --feed: #ff9a4d; --feed-soft: #2f1c0e;
+    --bad: #ff7a8f; --bad-soft: #33161c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 18px; line-height: 1.55; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 80px; display: grid; gap: 64px; }
+  h1, h2, h3 { font-family: var(--display); line-height: 1.08; text-wrap: balance; margin: 0; }
+  h1 { font-size: clamp(2.4rem, 6.5vw, 4.2rem); font-weight: 800; letter-spacing: -0.02em; }
+  h2 { font-size: clamp(1.6rem, 3.6vw, 2.3rem); font-weight: 800; letter-spacing: -0.01em; }
+  h3 { font-size: 1.3rem; font-weight: 700; }
+  p { margin: 0; max-width: 36em; }
+  code { font-family: var(--mono); font-size: 0.82em; background: var(--soft); padding: 0.1em 0.35em; border-radius: 5px; }
+  .eyebrow { font-family: var(--mono); font-size: 0.74rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .lede { font-size: 1.3rem; max-width: 28em; }
+  section { display: grid; gap: 22px; }
+  section + section { border-top: 1px solid var(--line); padding-top: 48px; }
+  .idx { color: var(--idx); } .feed { color: var(--feed); } .bad { color: var(--bad); }
+
+  .pic { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 18px; overflow-x: auto; }
+  .pic svg { display: block; width: 100%; height: auto; min-width: 620px; }
+  svg text { font-family: var(--body); fill: var(--ink); }
+  svg .m { font-family: var(--mono); font-size: 13px; fill: var(--muted); }
+  svg .big { font-family: var(--display); font-weight: 800; }
+  svg .ink-bg { fill: var(--surface); }
+
+  .pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px; }
+  .card { background: var(--surface); border: 2px solid var(--line); border-radius: 16px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+  .card.i { border-color: var(--idx); } .card.f { border-color: var(--feed); }
+  .tag { font-family: var(--mono); font-size: 0.74rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+  pre { margin: 0; font-family: var(--mono); font-size: 0.76rem; line-height: 1.5; background: var(--soft); border-radius: 10px; padding: 12px; overflow-x: auto; white-space: pre; }
+  .steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: start; counter-increment: s; }
+  .steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+    font-family: var(--display); font-weight: 800; font-size: 0.9rem; color: var(--surface); background: var(--muted); }
+  .card.i .steps li::before { background: var(--idx); } .card.f .steps li::before { background: var(--feed); }
+  :root[data-theme="dark"] .steps li::before { color: #0b0d10; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .steps li::before { color: #0b0d10; } }
+  .extra { font-family: var(--mono); font-size: 0.7rem; font-weight: 600; color: var(--feed); border: 1.5px solid currentColor; border-radius: 999px; padding: 0.05em 0.5em; margin-left: 0.3em; white-space: nowrap; }
+
+  .needs { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  .need { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 6px; }
+  .need b { font-family: var(--display); font-size: 1.15rem; }
+  .need .yes { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+
+  .missed { display: flex; flex-wrap: wrap; gap: 8px; }
+  .missed span { background: var(--bad-soft); color: var(--ink); border: 1px solid var(--bad); border-radius: 999px; padding: 0.2em 0.75em; font-size: 0.9rem; }
+
+  .pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  .pick .card b { font-family: var(--display); font-size: 1.1rem; }
+  .foot { font-size: 0.85rem; color: var(--muted); }
+  @media (max-width: 560px) { body { font-size: 17px; } .wrap { gap: 48px; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+
+<section>
+  <div class="eyebrow">The Deepgram Changelog · build your own</div>
+  <h1>Do you need <span class="idx">llms.txt</span>?</h1>
+  <p class="lede">No. The podcast needs every changelog entry, its date, and its full text. An
+  <span class="idx">llms.txt</span> index or an <span class="feed">RSS feed</span> can both provide that.</p>
+  <div class="pic" role="img" aria-label="Two sources, the llms.txt index and the RSS feed, both turn into the same stack of daily pages, which feed the podcast.">
+    <svg viewBox="0 0 900 300">
+      <!-- index source -->
+      <rect x="20" y="30" width="200" height="100" rx="14" fill="var(--idx-soft)" stroke="var(--idx)" stroke-width="2"/>
+      <text x="120" y="72" text-anchor="middle" class="big" font-size="22" style="fill:var(--idx)">llms.txt</text>
+      <text x="120" y="100" text-anchor="middle" font-size="15">a list of links</text>
+      <!-- feed source -->
+      <rect x="20" y="170" width="200" height="100" rx="14" fill="var(--feed-soft)" stroke="var(--feed)" stroke-width="2"/>
+      <text x="120" y="212" text-anchor="middle" class="big" font-size="22" style="fill:var(--feed)">RSS / Atom</text>
+      <text x="120" y="240" text-anchor="middle" font-size="15">a feed of posts</text>
+      <!-- funnel -->
+      <path d="M220 80 C 300 80, 320 150, 390 150" fill="none" stroke="var(--idx)" stroke-width="4"/>
+      <path d="M220 220 C 300 220, 320 150, 390 150" fill="none" stroke="var(--feed)" stroke-width="4"/>
+      <rect x="390" y="95" width="170" height="110" rx="14" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+      <text x="475" y="138" text-anchor="middle" class="big" font-size="19">changelog_</text>
+      <text x="475" y="162" text-anchor="middle" class="big" font-size="19">source.py</text>
+      <text x="475" y="188" text-anchor="middle" class="m">one file knows</text>
+      <path d="M560 150 L 620 150" stroke="var(--ink)" stroke-width="4" marker-end="url(#a1)"/>
+      <!-- day pages -->
+      <g>
+        <rect x="652" y="96" width="120" height="110" rx="10" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="642" y="106" width="120" height="110" rx="10" fill="var(--soft)" stroke="var(--line)" stroke-width="2"/>
+        <rect x="632" y="116" width="120" height="110" rx="10" fill="var(--surface)" stroke="var(--ink)" stroke-width="2"/>
+        <text x="646" y="142" class="m" style="fill:var(--ink)">Sep 17</text>
+        <text x="646" y="168" class="m" style="fill:var(--ink)">## Entry</text>
+        <rect x="646" y="178" width="92" height="6" rx="3" fill="var(--line)"/>
+        <rect x="646" y="192" width="70" height="6" rx="3" fill="var(--line)"/>
+        <text x="692" y="255" text-anchor="middle" font-size="15">one page per day</text>
+      </g>
+      <path d="M780 150 L 830 150" stroke="var(--ink)" stroke-width="4" marker-end="url(#a1)"/>
+      <circle cx="862" cy="150" r="26" fill="var(--ink)"/>
+      <path d="M853 138 L 875 150 L 853 162 Z" fill="var(--bg)"/>
+      <text x="862" y="205" text-anchor="middle" font-size="15">podcast</text>
+      <defs><marker id="a1" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="var(--ink)"/></marker></defs>
+    </svg>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">What each one looks like</div>
+  <h2>A list of links, or a feed of posts</h2>
+  <div class="pair">
+    <div class="card i">
+      <span class="tag idx">llms.txt index</span>
+      <pre>- [September 17, 2026](https://…/changelog/2026/9/17.md)
+- [September 15, 2026](https://…/changelog/2026/9/15.md)</pre>
+      <p>Each link opens a clean markdown page for that day.</p>
+    </div>
+    <div class="card f">
+      <span class="tag feed">RSS feed</span>
+      <pre>&lt;item&gt;
+  &lt;pubDate&gt;Thu, 17 Sep 2026&lt;/pubDate&gt;
+  &lt;content:encoded&gt;&lt;h2&gt;Nova-3 Pharma…&lt;/h2&gt;…
+&lt;/item&gt;</pre>
+      <p>Each item carries its date and the whole post as HTML.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">How each becomes a day page</div>
+  <h2>The feed does three extra chores</h2>
+  <div class="pair">
+    <div class="card i">
+      <span class="tag idx">With llms.txt</span>
+      <ol class="steps">
+        <li><span>Read the list of links.</span></li>
+        <li><span>Take the date from the link: <code>/2026/9/17.md</code> or "September 17, 2026".</span></li>
+        <li><span>Download each page. It's already markdown.</span></li>
+        <li><span>Drop the <code>&gt;</code> notes about the page itself.</span></li>
+      </ol>
+    </div>
+    <div class="card f">
+      <span class="tag feed">Without it: RSS or Atom</span>
+      <ol class="steps">
+        <li><span>Read every item and its date.</span></li>
+        <li><span>Turn the HTML into markdown. <span class="extra">extra</span></span></li>
+        <li><span>Merge items from the same day into one page. <span class="extra">extra</span></span></li>
+        <li><span>No heading? Use the item title, unless the title is just a date. <span class="extra">extra</span></span></li>
+      </ol>
+    </div>
+  </div>
+  <p>Headings, lists, links, and code survive the HTML conversion. Styling doesn't, and the writer doesn't need it.</p>
+</section>
+
+<section>
+  <div class="eyebrow">What your changelog must have</div>
+  <h2>Three things, either way</h2>
+  <div class="needs">
+    <div class="need"><b>A date on every entry</b><span class="yes">URL path, link text, pubDate, or published</span></div>
+    <div class="need"><b>The full text</b><span class="yes">a teaser makes a thin episode</span></div>
+    <div class="need"><b>One heading per entry</b><span class="yes">each <code>##</code> becomes one story</span></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">What we found in Deepgram's changelog</div>
+  <h2>On a two-entry day, the llms.txt page keeps one</h2>
+  <div class="pic" role="img" aria-label="August 12, 2026 had two changelog entries. The llms.txt page shows only the self-hosted release. The RSS feed shows both, including Flux TTS general availability. Across 212 days the feed has 231 entries and the index 219.">
+    <svg viewBox="0 0 900 330">
+      <text x="30" y="40" class="big" font-size="22">August 12, 2026</text>
+      <!-- llms page -->
+      <rect x="30" y="64" width="380" height="150" rx="14" fill="var(--idx-soft)" stroke="var(--idx)" stroke-width="2"/>
+      <text x="50" y="94" class="m" style="fill:var(--idx)">2026/8/12.md  (llms.txt)</text>
+      <rect x="50" y="110" width="340" height="40" rx="8" class="ink-bg" stroke="var(--line)"/>
+      <text x="64" y="136" font-size="15">Self-Hosted August Release</text>
+      <rect x="50" y="160" width="340" height="40" rx="8" fill="none" stroke="var(--bad)" stroke-width="2" stroke-dasharray="6 5"/>
+      <text x="64" y="186" font-size="15" style="fill:var(--bad)">Flux TTS is GA · missing</text>
+      <!-- feed -->
+      <rect x="490" y="64" width="380" height="150" rx="14" fill="var(--feed-soft)" stroke="var(--feed)" stroke-width="2"/>
+      <text x="510" y="94" class="m" style="fill:var(--feed)">changelog.rss</text>
+      <rect x="510" y="110" width="340" height="40" rx="8" class="ink-bg" stroke="var(--line)"/>
+      <text x="524" y="136" font-size="15">Self-Hosted August Release</text>
+      <rect x="510" y="160" width="340" height="40" rx="8" class="ink-bg" stroke="var(--feed)" stroke-width="2"/>
+      <text x="524" y="186" font-size="15">Flux TTS is Generally Available</text>
+      <!-- totals bars, scale: 231 entries = 600px -->
+      <text x="170" y="236" class="m">across the same 212 days</text>
+      <text x="30" y="263" class="m" style="fill:var(--idx)">llms.txt</text>
+      <rect x="170" y="246" width="569" height="22" rx="5" fill="var(--idx)"/>
+      <text x="749" y="263" font-size="15" class="big">219 entries</text>
+      <rect x="170" y="280" width="600" height="22" rx="5" fill="var(--feed)"/>
+      <text x="780" y="297" font-size="15" class="big">231 entries</text>
+      <text x="30" y="297" class="m" style="fill:var(--feed)">feed</text>
+    </svg>
+  </div>
+  <p>Some of what the show never heard:</p>
+  <div class="missed">
+    <span>Flux TTS is Generally Available</span>
+    <span>Flux Multilingual</span>
+    <span>Expressivity for Flux TTS</span>
+    <span>ForceEndTurn client message</span>
+    <span>Nova-3 Multilingual GA</span>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Picking yours</div>
+  <h2>Try both, count, then pick</h2>
+  <div class="pick">
+    <div class="card i"><b>Only llms.txt</b><code>CHANGELOG_INDEX_URL=…/llms.txt</code><p>Cleanest input. Check that no day hides a second entry.</p></div>
+    <div class="card f"><b>Only a feed</b><code>CHANGELOG_FEED_URL=…/feed.xml</code><p>Works if each item has the full post, not a teaser.</p></div>
+    <div class="card"><b>Both</b><code>python3 scripts/backfill_plan.py</code><p>Run it once with each. Compare the entry counts. Keep the one with more.</p></div>
+  </div>
+  <p class="foot">Set one variable, not both. With neither set, the show reads Deepgram's llms.txt. Code: <code>scripts/changelog_source.py</code>.</p>
+</section>
+
+</main>
+</body>
+</html>

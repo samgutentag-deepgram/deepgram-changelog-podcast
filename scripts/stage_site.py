@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / 'dist'
 SCRIPTS = ('serve.py', 'produce.py', 'write_episode.py', 'render_episode.py', 'readback_check.py',
            'fill_cost.py', 'build_feed.py', 'build_catalog.py', 'backfill_plan.py', 'make_art.py',
-           'seed_volume.py', 'weekly_run.py')
+           'seed_volume.py', 'weekly_run.py', 'alerts.py', 'changelog_source.py')
 DOCS = ('show-format.md', 'cast.json', 'example-episode.md', 'key-terms.json')
 RESEARCH = ('backfill-plan.json',)
 EPISODE_FILES = ('episode.mp3', 'episode.json', 'chapters.json', 'script.json', 'transcript.vtt',

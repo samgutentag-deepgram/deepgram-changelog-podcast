@@ -41,7 +41,12 @@ ART_PY = os.environ.get('ART_PYTHON', PY)
 def run(*args: str, capture: bool = True, py: str = PY) -> str:
     r = subprocess.run([py, *args], cwd=ROOT, capture_output=capture, text=True)
     if r.returncode != 0:
-        raise RuntimeError(f"{' '.join(args)} failed:\n{(r.stdout or '')[-1500:]}\n{(r.stderr or '')[-1500:]}")
+        # The exception line goes first: the FAILED log line and the Pushover alert keep only the
+        # head of this message, and a head of stdout progress lines once hid the actual error.
+        tail = (r.stderr or '').strip() or (r.stdout or '').strip()
+        cause = tail.splitlines()[-1].strip() if tail else f'exit {r.returncode}'
+        raise RuntimeError(f"{Path(args[0]).name} failed: {cause}\n"
+                           f"{(r.stdout or '')[-1500:]}\n{(r.stderr or '')[-1500:]}")
     return (r.stdout or '').strip()
 
 
