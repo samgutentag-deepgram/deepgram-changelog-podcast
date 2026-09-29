@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Deepgram Changelog</title>
+<meta name="description" content="The Deepgram developer changelog, read back to you every Tuesday by Deepgram Flux TTS.">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="brand.css">
+<link rel="stylesheet" href="readback.css">
+</head>
+<body>
+<header class="masthead">
+  <p class="eyebrow"><span class="dg">deepgram</span> &middot; Flux TTS demo</p>
+  <div class="masthead-chrome">
+    <button id="subscribe-open" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor">
+        <path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/>
+      </svg>
+      <span>Subscribe</span>
+    </button>
+    <button id="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+  </div>
+</header>
+
+<dialog id="subscribe-dialog" aria-labelledby="subscribe-dialog-title">
+  <div class="sd-head">
+    <h2 id="subscribe-dialog-title">Subscribe in your podcast player</h2>
+    <button class="sd-close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+  <p class="sd-note">Opens the app if it is installed. Nothing here leaves your device.</p>
+  <ul id="sd-list" class="sd-list"></ul>
+  <div class="sd-copy">
+    <label for="sd-url">Or paste this feed URL into any player</label>
+    <div class="sd-copy-row">
+      <input id="sd-url" type="text" readonly spellcheck="false">
+      <button id="sd-copy" type="button">Copy</button>
+    </div>
+  </div>
+</dialog>
+
+<h1>The Deepgram Changelog</h1>
+<p class="lede">The Deepgram developer changelog, read back to you every Tuesday. Breaking changes
+first, then launches, then everything else that shipped the week before, with a link to the docs
+for every item. Brooke anchors, a fixed cast of voices takes each product segment, and every word
+is Deepgram Flux TTS.</p>
+
+<section id="hero" class="hero" hidden aria-labelledby="hero-title">
+  <button id="hero-play" class="hero-play orb orb-glyph" type="button" aria-label="Play the latest episode">
+    <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
+    <svg class="ico-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.2v14H7zm6.8 0H17v14h-3.2z"/></svg>
+  </button>
+  <div class="hero-meta">
+    <p class="hero-kicker">Latest episode</p>
+    <h2 id="hero-title" class="hero-title">&nbsp;</h2>
+    <p class="hero-sub" id="hero-sub"></p>
+    <p id="hero-summary" class="hero-summary"></p>
+    <div class="hero-scrub" id="hero-scrub" role="slider" tabindex="0"
+         aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="hero-bar" class="hero-bar"></div>
+      <div id="hero-ticks" class="hero-ticks"></div>
+    </div>
+    <p class="hero-links"><a id="hero-full" href="#">Script, segments and docs links</a></p>
+  </div>
+</section>
+<audio id="hero-audio" preload="none"></audio>
+
+<h2 class="section-h" id="more-h" hidden>More episodes</h2>
+<ul class="day-grid ep-list" id="episodes"><li class="muted">Loading episodes&hellip;</li></ul>
+
+<footer class="page-foot">
+  <a href="/back-catalog">Back catalog</a>
+  &middot; <a href="https://developers.deepgram.com/changelog" target="_blank" rel="noopener">The changelog itself</a>
+  &middot; <a href="https://dpgr.am/discord" target="_blank" rel="noopener">Discord</a>
+  &middot; <a href="https://github.com/orgs/deepgram/discussions" target="_blank" rel="noopener">GitHub Discussions</a>
+</footer>
+
+<script src="theme.js"></script>
+<script src="subscribe.js"></script>
+<script src="orb.js"></script>
+<script type="module">
+import { mmss } from './format.js'
+
+function el(tag, cls, text) {
+  var n = document.createElement(tag)
+  if (cls) n.className = cls
+  if (text != null) n.textContent = text
+  return n
+}
+function href(e) { return '/e/' + encodeURIComponent(e.id) }
+
+fetch('/episodes/index.json').then(function (r) {
+  if (!r.ok) throw new Error('index.json ' + r.status)
+  return r.json()
+}).then(function (d) {
+  var all = d.episodes || []
+  var list = document.getElementById('episodes')
+  list.innerHTML = ''
+  if (!all.length) { list.appendChild(el('li', 'muted', 'No episodes yet.')); return }
+  hero(all[0])
+  var rest = all.slice(1)
+  if (!rest.length) { list.hidden = true; return }
+  document.getElementById('more-h').hidden = false
+  rest.forEach(function (e) {
+    var li = el('li')
+    var cell = el('div', 'ep-cell ep-cell--linked ep-cell--art')
+    // The episode's art, as a square to the left. It is decorative next to the title, so it is
+    // hidden from screen readers, and if an episode has no art the cell falls back to one column.
+    var artLink = el('a', 'ep-art-link'); artLink.href = href(e); artLink.tabIndex = -1
+    artLink.setAttribute('aria-hidden', 'true')
+    var art = el('img', 'ep-art'); art.src = '/episodes/' + encodeURIComponent(e.id) + '/art.jpg'
+    art.alt = ''; art.loading = 'lazy'; art.width = 1400; art.height = 1400
+    art.addEventListener('error', function () { artLink.remove(); cell.classList.remove('ep-cell--art') })
+    artLink.appendChild(art)
+    cell.appendChild(artLink)
+    var info = el('div', 'ep-info')
+    cell.appendChild(info)
+    info.appendChild(el('span', 'ep-slot', 'Released ' + e.id + ' · ' + mmss(e.duration_seconds)))
+    var h = el('h3', 'ep-title'); var a = el('a', null, e.title); a.href = href(e); h.appendChild(a)
+    info.appendChild(h)
+    if (e.summary) info.appendChild(el('p', 'ep-summary', e.summary))
+    var listen = el('a', 'ep-listen-link'); listen.href = href(e)
+    listen.innerHTML = '<span class="ep-listen-label">Listen</span><span class="ep-listen-arrow" aria-hidden="true">&rarr;</span>'
+    var foot = el('div', 'ep-foot'); foot.appendChild(listen); info.appendChild(foot)
+    li.appendChild(cell); list.appendChild(li)
+  })
+}).catch(function (e) {
+  var list = document.getElementById('episodes')
+  list.innerHTML = ''
+  list.appendChild(el('li', 'muted', 'Could not load episodes: ' + e))
+})
+
+function hero(e) {
+  var section = document.getElementById('hero')
+  var btn = document.getElementById('hero-play')
+  var audio = document.getElementById('hero-audio')
+  var bar = document.getElementById('hero-bar')
+  var scrub = document.getElementById('hero-scrub')
+  var ticks = document.getElementById('hero-ticks')
+  document.getElementById('hero-title').textContent = e.title
+  var others = (e.hosts || []).filter(function (n) { return n !== e.host })
+  document.getElementById('hero-sub').textContent = 'Hosted by ' + e.host + (others.length ? ' with ' + others.join(', ') : '')
+    + ' · ' + mmss(e.duration_seconds)
+    + ' · released ' + e.id
+  document.getElementById('hero-summary').textContent = e.summary || ''
+  document.getElementById('hero-full').href = href(e)
+  audio.src = '/episodes/' + encodeURIComponent(e.id) + '/episode.mp3'
+  section.hidden = false
+
+  var orb = window.HNOrb ? window.HNOrb.attach(btn, { observe: false }) : null
+  var analyser = null, chapters = []
+  fetch('/episodes/' + encodeURIComponent(e.id) + '/episode.json').then(function (r) { return r.json() })
+    .then(function (ep) { if (orb) orb.setSpeaker(ep.voice_id, null, true) }).catch(function () {})
+  fetch('/episodes/' + encodeURIComponent(e.id) + '/chapters.json').then(function (r) { return r.json() })
+    .then(function (c) { chapters = c.chapters || []; placeTicks() }).catch(function () {})
+
+  function connect() {
+    if (analyser) return
+    var AC = window.AudioContext || window.webkitAudioContext
+    if (!AC) return
+    try {
+      var ac = new AC()
+      var src = ac.createMediaElementSource(audio)
+      analyser = ac.createAnalyser(); analyser.fftSize = 1024
+      src.connect(analyser); analyser.connect(ac.destination)
+      if (orb) orb.setEnvSource(window.HNOrb.envelope(analyser))
+      if (ac.state === 'suspended') ac.resume()
+    } catch (err) { analyser = null }
+  }
+  function placeTicks() {
+    if (!isFinite(audio.duration) || audio.duration <= 0) return
+    ticks.innerHTML = ''
+    chapters.forEach(function (c) {
+      if (!c.startTime) return
+      var t = el('div', 'hero-tick'); t.style.left = (c.startTime / audio.duration * 100) + '%'
+      ticks.appendChild(t)
+    })
+  }
+  function sync() {
+    if (!isFinite(audio.duration) || audio.duration <= 0) return
+    var f = Math.min(1, Math.max(0, audio.currentTime / audio.duration))
+    bar.style.width = (f * 100) + '%'
+    scrub.setAttribute('aria-valuenow', Math.round(f * 100))
+  }
+  btn.addEventListener('click', function () {
+    if (audio.paused) { connect(); audio.play() } else { audio.pause() }
+  })
+  scrub.addEventListener('click', function (ev) {
+    if (!isFinite(audio.duration)) { audio.preload = 'metadata'; audio.load(); return }
+    var r = scrub.getBoundingClientRect()
+    audio.currentTime = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * audio.duration
+  })
+  audio.addEventListener('play', function () { section.classList.add('is-playing'); btn.setAttribute('aria-label', 'Pause'); if (orb) orb.setLive(true) })
+  audio.addEventListener('pause', function () { section.classList.remove('is-playing'); btn.setAttribute('aria-label', 'Play the latest episode'); if (orb) orb.setLive(false) })
+  audio.addEventListener('timeupdate', sync)
+  audio.addEventListener('loadedmetadata', function () { sync(); placeTicks() })
+}
+</script>
+</body>
+</html>

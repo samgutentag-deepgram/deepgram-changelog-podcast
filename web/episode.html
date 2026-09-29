@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Deepgram Changelog: Episode</title>
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<!-- brand.css is copied verbatim from HN Radio (github.com/samgutentag-deepgram/hn-radio). Show-specific rules live in readback.css so the
+     shared file can be re-synced without a merge. -->
+<link rel="stylesheet" href="brand.css">
+<link rel="stylesheet" href="readback.css">
+</head>
+<body>
+<header class="masthead">
+  <p class="eyebrow"><span class="dg">deepgram</span> &middot; <a href="/">The Deepgram Changelog</a></p>
+  <div class="masthead-chrome">
+    <button id="subscribe-open" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor">
+        <path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/>
+      </svg>
+      <span>Subscribe</span>
+    </button>
+    <button id="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+  </div>
+</header>
+
+<dialog id="subscribe-dialog" aria-labelledby="subscribe-dialog-title">
+  <div class="sd-head">
+    <h2 id="subscribe-dialog-title">Subscribe in your podcast player</h2>
+    <button class="sd-close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+  <p class="sd-note">Opens the app if it is installed. Nothing here leaves your device.</p>
+  <ul id="sd-list" class="sd-list"></ul>
+  <div class="sd-copy">
+    <label for="sd-url">Or paste this feed URL into any player</label>
+    <div class="sd-copy-row">
+      <input id="sd-url" type="text" readonly spellcheck="false">
+      <button id="sd-copy" type="button">Copy</button>
+    </div>
+  </div>
+</dialog>
+<h1 id="title">Loading&hellip;</h1>
+<p class="muted" id="meta"></p>
+
+<div class="console">
+  <div class="console-player">
+    <button class="transport orb orb-glyph" id="transport" type="button" aria-label="Play"
+            ><span id="transport-mark">&#9654;</span></button>
+    <div class="transport-scrub" id="transport-scrub" role="slider" tabindex="0"
+         aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div class="transport-bar" id="transport-bar"></div>
+      <div class="transport-ticks" id="transport-ticks"></div>
+    </div>
+    <span class="transport-time" id="transport-time">0:00 / 0:00</span>
+  </div>
+  <div id="chapters"></div>
+</div>
+
+<section id="panel-play">
+  <audio id="player" preload="metadata"></audio>
+  <section class="cost" id="cost" hidden aria-labelledby="cost-h">
+    <p class="cost-h" id="cost-h">What this episode cost to render</p>
+    <div class="cost-figures" id="cost-figures"></div>
+    <p class="cost-fine" id="cost-fine"></p>
+  </section>
+  <div id="notes"></div>
+  <div id="script"></div>
+</section>
+
+<script src="theme.js"></script>
+<script src="subscribe.js"></script>
+<script src="orb.js"></script>
+<script type="module" src="episode.js"></script>
+</body>
+</html>

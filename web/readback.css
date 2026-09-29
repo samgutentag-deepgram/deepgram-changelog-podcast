@@ -1,0 +1,199 @@
+/* Show-specific rules for The Deepgram Changelog Readback. brand.css is a verbatim copy from
+   HN Radio (github.com/samgutentag-deepgram/hn-radio) and stays that way so it can be re-synced; anything this show adds goes here.
+   Same seal as brand.css: tokens only, no literals. */
+
+/* Show-note links under each segment's script. */
+.seg-links {
+  margin: 0.4rem 0 0.2rem;
+  padding: 0.6rem 0.3rem 0.2rem;
+  border-top: 1px solid var(--dg-border);
+}
+.seg-links-h {
+  margin: 0 0 0.3rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--dg-text-label);
+}
+.seg-links ul { margin: 0; padding-left: 1.1rem; }
+.seg-links li { font-size: 0.88rem; margin: 0.15rem 0; }
+.seg-links a { color: var(--dg-link); text-underline-offset: 2px; }
+
+/* One episode per week, so the archive is a single column of cards, not HN Radio's day rows. */
+.ep-list > li + li { margin-top: 0.9rem; }
+
+/* ============================================================================
+   BACK CATALOG (/back-catalog). One row per weekly episode, planned or published.
+   The stat tiles reuse brand.css's .cost figure row and the year filter reuses .preset-btn,
+   so only the table itself is new here.
+   ========================================================================= */
+.bc-stats { margin: 1.2rem 0 1rem; }
+.bc-years { margin: 0.4rem 0 0.4rem; }
+.bc-year-n { color: var(--dg-text-label); font-weight: var(--dg-weight-regular); }
+.bc-status { margin: 0 0 0.8rem; }
+.bc-status.bc-error, td.bc-error { color: var(--dg-state-error); }
+
+/* Twelve columns do not fit the 60vw reading column, so the table alone widens to the viewport
+   (less the gutters and a scrollbar's worth) and stays centered on it. Never narrower than the
+   column, so on a phone it is exactly the column and scrolls inside itself. */
+.bc-wrap {
+  --bc-width: max(100%, min(100vw - 2 * var(--dg-gutter) - 1rem, 88rem));
+  width: var(--bc-width);
+  margin-left: calc(50% - var(--bc-width) / 2);
+  overflow-x: auto;
+  border: 1px solid var(--dg-border);
+  border-radius: var(--dg-shape-panel);
+  background: var(--dg-bg-app);
+}
+.bc-wrap:focus-visible { outline: 2px solid var(--dg-focus-ring); outline-offset: 2px; }
+
+.bc-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.86rem; }
+.bc-table th {
+  text-align: left;
+  vertical-align: bottom;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: var(--dg-weight-bold);
+  color: var(--dg-text-label);
+  padding: 0.6rem 0.55rem 0.45rem;
+  border-bottom: 1px solid var(--dg-border);
+  background: var(--dg-bg-app);
+}
+.bc-th-n {
+  display: block;
+  margin-top: 0.15rem;
+  letter-spacing: 0;
+  font-weight: var(--dg-weight-regular);
+  font-variant-numeric: tabular-nums;
+}
+.bc-table td {
+  padding: 0.5rem 0.55rem;
+  border-bottom: 1px solid var(--dg-border);
+  vertical-align: top;
+  color: var(--dg-text-body);
+  background: var(--dg-bg-app);
+}
+.bc-table tbody tr:last-child td { border-bottom: none; }
+.bc-row:hover td { background: var(--dg-bg-well); }
+
+/* The episode column stays put while the rest scrolls, so a phone never loses track of the row.
+   Sticky cells need an opaque fill, which is why every cell paints --dg-bg-app. */
+.bc-table .bc-ep {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 13rem;
+  max-width: 17rem;
+  border-right: 1px solid var(--dg-border);
+}
+@media (max-width: 34rem) {
+  .bc-table .bc-ep { min-width: 10.5rem; max-width: 11.5rem; }
+}
+td.bc-ep .bc-ep-inner { display: grid; grid-template-columns: auto 1fr; gap: 0.1rem 0.45rem; align-items: start; }
+.bc-name { color: var(--dg-text-primary); line-height: 1.35; }
+.bc-name a { color: var(--dg-link); text-underline-offset: 2px; }
+.bc-tag {
+  grid-column: 2;
+  justify-self: start;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.05rem 0.5rem;
+  border: 1px solid var(--dg-border);
+  border-radius: var(--dg-shape-pill);
+  color: var(--dg-text-label);
+}
+.bc-tag.is-published {
+  color: var(--dg-text-on-accent);
+  background: var(--dg-accent);
+  border-color: var(--dg-accent);
+  font-weight: var(--dg-weight-bold);
+}
+
+/* Published rows carry a thin accent rail and a faint wash, layered over the opaque fill so the
+   sticky column still covers what scrolls under it. */
+.bc-row.is-published td {
+  background: linear-gradient(rgba(var(--dg-accent-rgb), 0.07), rgba(var(--dg-accent-rgb), 0.07)), var(--dg-bg-app);
+}
+.bc-row.is-published td.bc-ep { box-shadow: inset 3px 0 0 var(--dg-accent); }
+
+.bc-toggle {
+  width: 1.4rem;
+  height: 1.4rem;
+  padding: 0;
+  font-size: 0.7rem;
+  line-height: 1;
+  color: var(--dg-icon-default);
+  background: transparent;
+  border: 1px solid var(--dg-border);
+  border-radius: var(--dg-shape-orb);
+  cursor: pointer;
+  transition: color var(--dg-anim-fast) var(--dg-anim-ease), border-color var(--dg-anim-fast) var(--dg-anim-ease);
+}
+.bc-toggle:hover { color: var(--dg-text-primary); border-color: var(--dg-border-hover); }
+.bc-chev { display: inline-block; transition: transform var(--dg-anim-fast) var(--dg-anim-ease); }
+.bc-toggle[aria-expanded="true"] .bc-chev { transform: rotate(90deg); }
+
+.bc-nw { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bc-n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.bc-table th.bc-n { text-align: right; }
+.bc-c { text-align: center; min-width: 3.6rem; }
+.bc-table th.bc-c { text-align: center; }
+.bc-check { color: var(--dg-accent); font-weight: var(--dg-weight-bold); cursor: help; }
+html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
+.bc-cost { font-family: var(--dg-font-mono); }
+.bc-row.is-published .bc-cost { color: var(--dg-text-primary); }
+
+/* The expanded headlines. The inner box is sticky too, and capped to the visible width, so on a
+   phone it reads in place instead of stretching across the whole scrolled table. */
+.bc-detail td { padding: 0; }
+.bc-detail-inner {
+  position: sticky;
+  left: 0;
+  width: min(46rem, 100vw - 2 * var(--dg-gutter) - 1.5rem);
+  padding: 0.3rem 0.9rem 0.8rem 2.4rem;
+  font-size: 0.84rem;
+}
+.bc-seg-h {
+  margin: 0.6rem 0 0.2rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: var(--dg-weight-bold);
+  color: var(--dg-text-label);
+}
+.bc-seg-empty { margin: 0; color: var(--dg-text-label); }
+.bc-detail-inner ul { margin: 0; padding-left: 1.1rem; }
+.bc-detail-inner li { margin: 0.12rem 0; }
+.bc-detail-inner a { color: var(--dg-link); text-underline-offset: 2px; }
+.bc-detail-inner code { font-family: var(--dg-font-mono); font-size: 0.92em; }
+.bc-date { margin-right: 0.45rem; color: var(--dg-text-label); font-variant-numeric: tabular-nums; }
+.bc-part { margin-left: 0.45rem; font-size: 0.74rem; color: var(--dg-text-label); }
+.bc-listen { margin: 0.8rem 0 0; }
+
+/* ==========================================================================
+   HOME: episode art beside each episode in the list
+   ========================================================================== */
+.ep-cell--art {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+.ep-art-link { display: block; line-height: 0; }
+.ep-art {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+  border-radius: var(--dg-radius-md);
+  border: 1px solid var(--dg-border);
+  background: var(--dg-surface-deep);
+}
+.ep-info { min-width: 0; }
+@media (max-width: 560px) {
+  .ep-cell--art { grid-template-columns: 4.5rem minmax(0, 1fr); gap: 0.8rem; }
+}
+
+/* Back catalog: an estimated writer cost reads quieter than a measured one. */
+.bc-cost.is-estimate { font-style: italic; color: var(--dg-ink-muted); }
