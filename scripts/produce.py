@@ -1,0 +1,164 @@
+"""Produce episodes end to end: write, cost, render, readback retakes, art, catalog, feed.
+
+Usage:
+  python3 scripts/produce.py 2026-09-15                 one episode, by Tuesday release date
+  python3 scripts/produce.py --weekly                   the week that just ended, plus a 4 week sweep (the cron job)
+  python3 scripts/produce.py --weekly --dry-run         what the cron job would produce today, without producing it
+  python3 scripts/produce.py --backfill 2026 --jobs 3   every planned week in a year not yet rendered
+
+Each step is the standalone script it names, run as a subprocess, so any step can be rerun by
+hand. A result line per episode lands in <episodes>/<id>/produce.json. Rendered paragraph audio
+lives in .cache/tts; pass --clean-cache to delete it after the whole batch finishes, which is what
+the server does so its disk only ever keeps MP3s.
+
+Needs DEEPGRAM_API_KEY and ANTHROPIC_API_KEY. SITE_URL sets the feed's public origin.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import date, timedelta
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SCRIPTS = ROOT / 'scripts'
+EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
+SITE_URL = os.environ.get('SITE_URL', 'https://dg-devrel-deepgram-changelog.fly.dev')
+PY = sys.executable
+SWEEP_WEEKS = 4  # past weeks re-checked every Tuesday for entries that arrived late
+# The art step needs Pillow, which the rest of the pipeline does not. The container installs it
+# into the one interpreter; locally it can point at any Python that has it.
+ART_PY = os.environ.get('ART_PYTHON', PY)
+
+
+def run(*args: str, capture: bool = True, py: str = PY) -> str:
+    r = subprocess.run([py, *args], cwd=ROOT, capture_output=capture, text=True)
+    if r.returncode != 0:
+        raise RuntimeError(f"{' '.join(args)} failed:\n{(r.stdout or '')[-1500:]}\n{(r.stderr or '')[-1500:]}")
+    return (r.stdout or '').strip()
+
+
+def complete(ep: Path) -> bool:
+    # Done means the whole pipeline finished, not just that an MP3 exists: the first render writes
+    # episode.mp3 before the readback check, so a run that fails there leaves audio but no art
+    # and no produce.json. produce.json is written last; art.jpg covers the hand-made episode one.
+    return (ep / 'episode.mp3').exists() and ((ep / 'produce.json').exists() or (ep / 'art.jpg').exists())
+
+
+def produce(release: str, rewrite: bool = False) -> dict:
+    t0 = time.time()
+    ep = EPISODES / release
+    result = {'id': release, 'started': time.strftime('%Y-%m-%dT%H:%M:%S')}
+    if rewrite or not (ep / 'script.md').exists():
+        result['write'] = run(str(SCRIPTS / 'write_episode.py'), release, *(['--force'] if rewrite else []))
+    result['cost'] = run(str(SCRIPTS / 'fill_cost.py'), str(ep))
+    run(str(SCRIPTS / 'render_episode.py'), str(ep))
+    check = run(str(SCRIPTS / 'readback_check.py'), str(ep), '--retake', '3', '--json', str(ep / 'readback.json'))
+    result['readback'] = check.splitlines()[-1] if check else ''
+    result['render'] = run(str(SCRIPTS / 'render_episode.py'), str(ep)).splitlines()[-1]
+    if (SCRIPTS / 'make_art.py').exists():
+        try:
+            run(str(SCRIPTS / 'make_art.py'), str(ep), py=ART_PY)
+        except RuntimeError as e:
+            result['art_error'] = str(e)[-300:]
+    result['seconds'] = round(time.time() - t0)
+    (ep / 'produce.json').write_text(json.dumps(result, indent=2) + '\n')
+    return result
+
+
+def refresh_site() -> None:
+    if (SCRIPTS / 'build_catalog.py').exists():
+        run(str(SCRIPTS / 'build_catalog.py'))
+    run(str(SCRIPTS / 'build_feed.py'), '--base', SITE_URL)
+
+
+def last_tuesday(today: date) -> date:
+    # The Tuesday on or before today. At 5am Pacific on a Tuesday that is today, which covers the
+    # Sunday to Saturday that just ended.
+    return today - timedelta(days=(today.weekday() - 1) % 7)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument('release', nargs='?')
+    ap.add_argument('--weekly', action='store_true')
+    ap.add_argument('--backfill', help='year, e.g. 2026')
+    ap.add_argument('--jobs', type=int, default=1)
+    ap.add_argument('--rewrite', action='store_true')
+    ap.add_argument('--clean-cache', action='store_true')
+    ap.add_argument('--dry-run', action='store_true', help='list what would be produced, then stop')
+    args = ap.parse_args()
+
+    # One clock read for the whole run, so a run that straddles midnight plans and picks the
+    # same week.
+    latest = last_tuesday(date.today())
+    if args.weekly or args.backfill:
+        run(str(SCRIPTS / 'backfill_plan.py'), '--refresh',
+            '--through', (latest - timedelta(days=3)).isoformat())
+    if args.release:
+        targets = [args.release]
+    elif args.weekly:
+        # The week that just ended, plus a sweep of the SWEEP_WEEKS before it. The sweep catches
+        # changelog entries that were posted or backdated into a past week after that week's own
+        # Tuesday run, which would otherwise never get an episode.
+        window = [(latest - timedelta(weeks=i)).isoformat() for i in range(SWEEP_WEEKS + 1)]
+        planned = {p['id'] for p in json.loads((ROOT / 'research' / 'backfill-plan.json').read_text())}
+        targets = []
+        for rel in window:
+            if rel not in planned:
+                print(f'{rel}: no changelog entries that week, no episode')
+            elif complete(EPISODES / rel):
+                print(f'{rel}: already published')
+            else:
+                targets.append(rel)
+                print(f'{rel}: has entries and no episode, producing' + ('' if rel == window[0] else ' (sweep)'))
+        if not targets:
+            if not args.dry_run:
+                refresh_site()
+            return
+    elif args.backfill:
+        plan = json.loads((ROOT / 'research' / 'backfill-plan.json').read_text())
+        targets = sorted((p['id'] for p in plan if p['id'].startswith(args.backfill)
+                          and not complete(EPISODES / p['id'])), reverse=True)
+    else:
+        ap.error('give a release date, --weekly, or --backfill YEAR')
+
+    if args.dry_run:
+        print(f'dry run: would produce {len(targets)} episode(s): {", ".join(targets) or "none"}')
+        return
+    print(f'producing {len(targets)} episode(s) with {args.jobs} job(s)', flush=True)
+    failures = []
+    with ThreadPoolExecutor(max_workers=max(1, args.jobs)) as pool:
+        futures = {pool.submit(produce, t, args.rewrite): t for t in targets}
+        for f in as_completed(futures):
+            t = futures[f]
+            try:
+                r = f.result()
+                print(f"{t}: {r['render']} | {r['readback']} | {r['seconds']}s", flush=True)
+            except Exception as e:
+                failures.append(t)
+                print(f'{t}: FAILED {str(e)[:600]}', flush=True)
+            try:
+                refresh_site()
+            except RuntimeError as e:
+                print(f'site refresh failed: {e}', flush=True)
+    # Cleaned once, after every job is done. Per-episode cleanup raced: the outro's closing
+    # paragraph is identical in every episode, so one job deleted the clip another job's
+    # readback check was still reading, and 22 of the 75-episode history backfill failed that way.
+    if args.clean_cache:
+        shutil.rmtree(ROOT / '.cache' / 'tts', ignore_errors=True)
+        print('removed .cache/tts', flush=True)
+    print(f'done, {len(targets) - len(failures)} ok, {len(failures)} failed {failures}')
+    if failures:
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
