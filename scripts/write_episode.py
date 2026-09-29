@@ -22,6 +22,7 @@ import sys
 import time
 from datetime import date, timedelta
 from pathlib import Path
+from urllib.parse import urljoin
 
 import anthropic
 
@@ -41,7 +42,6 @@ USAGE: list[dict] = []
 SPOKEN_SEGMENT = {'Voice Agent': 'Voice Agent', 'Speech-to-Text': 'speech-to-text',
                   'Text-to-Speech': 'text-to-speech', 'Developer experience': 'developer experience'}
 PROMO_START, PROMO_END = date(2026, 9, 15), date(2026, 12, 31)
-DOCS = 'https://developers.deepgram.com'
 ORDINAL = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 7: 'seventh',
            8: 'eighth', 9: 'ninth', 10: 'tenth', 11: 'eleventh', 12: 'twelfth', 13: 'thirteenth',
            14: 'fourteenth', 15: 'fifteenth', 16: 'sixteenth', 17: 'seventeenth', 18: 'eighteenth',
@@ -104,7 +104,7 @@ What you write, and what you do not:
 - Write numbers, versions, and identifiers the way they should be spoken ("version zero point ten", "TTL" in caps, "V2" for version two). Avoid spelling out hard identifiers at all.
 - Refer to time relative to the episode's own week ("this week", "last month"), as of the release date. Never mention anything after the week you are covering.
 - Plain text only in spoken paragraphs: no markdown, no bullet lists, no em dashes, no URLs. Paragraphs are separated by a blank line; each paragraph becomes one audio clip, so keep paragraphs to one item or one handoff.
-- Show notes: under each segment's bold heading, list the public links for the items in that segment as markdown links. Use only URLs that appear in the entries (relative docs paths like /docs/x become https://developers.deepgram.com/docs/x) or the entry's own changelog URL.
+- Show notes: under each segment's bold heading, list the public links for the items in that segment as markdown links. Use only URLs that appear in the entries (relative paths like /docs/x become absolute URLs on the changelog's own site) or the entry's own changelog URL.
 
 Return exactly this shape and nothing else:
 
@@ -141,10 +141,10 @@ def spoken_day(d: date) -> str:
 def gather(release: date) -> tuple[date, date, list[dict]]:
     start, end = release - timedelta(days=9), release - timedelta(days=3)
     entries = []
-    for day, body in load_entries(refresh=False):
+    for day, body, url in load_entries(refresh=False):
         if start <= day <= end:
             for it in items(day, body):
-                it['url'] = f'{DOCS}/changelog/{day.year}/{day.month}/{day.day}'
+                it['url'] = url
                 entries.append(it)
     entries.sort(key=lambda it: it['date'])
     return start, end, entries
@@ -155,7 +155,8 @@ def allowed_urls(entries: list[dict]) -> set[str]:
     for it in entries:
         for m in re.finditer(r'\]\((\S+?)\)', it['body']):
             u = m.group(1)
-            urls.add(DOCS + u if u.startswith('/') else u)
+            # Relative links resolve against the entry's own page, so any changelog site works.
+            urls.add(urljoin(it['url'], u))
     return {u.split('#')[0].rstrip('/') for u in urls}
 
 

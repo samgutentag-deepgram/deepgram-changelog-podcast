@@ -19,15 +19,14 @@ import html
 import json
 import os
 import re
-import urllib.request
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
+import changelog_source
+
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
-CACHE = ROOT / '.cache' / 'changelog'
-INDEX_URL = 'https://developers.deepgram.com/changelog/llms.txt'
 SEGMENTS = ['Breaking changes and action required', 'Launches', 'Quick hits', 'Voice Agent',
             'Speech-to-Text', 'Text-to-Speech', 'Developer experience']
 SHORT = {'Breaking changes and action required': 'Breaking', 'Launches': 'Launches',
@@ -55,26 +54,10 @@ DX = re.compile(r'\bsdk\b|\bcli\b|react|docs?\b|documentation|correction|saga|\b
                 r'api key|token|developer', re.I)
 
 
-def fetch(url: str) -> str:
-    with urllib.request.urlopen(url, timeout=60) as r:
-        return r.read().decode()
-
-
-def load_entries(refresh: bool) -> list[tuple[date, str]]:
-    CACHE.mkdir(parents=True, exist_ok=True)
-    index = CACHE / 'llms.txt'
-    if refresh or not index.exists():
-        index.write_text(fetch(INDEX_URL))
-    out = []
-    for m in re.finditer(r'\((https://developers\.deepgram\.com/changelog/(\d{4})/(\d{1,2})/(\d{1,2})\.md)\)',
-                         index.read_text()):
-        url, y, mo, d = m.group(1), int(m.group(2)), int(m.group(3)), int(m.group(4))
-        f = CACHE / f'{y}-{mo:02d}-{d:02d}.md'
-        if refresh or not f.exists():
-            f.write_text(fetch(url))
-        body = '\n'.join(l for l in f.read_text().splitlines() if not l.startswith('>'))
-        out.append((date(y, mo, d), body))
-    return out
+def load_entries(refresh: bool) -> list[tuple[date, str, str]]:
+    """(day, markdown body, public URL) per changelog day. See changelog_source.py for the two
+    kinds of source it reads, an llms.txt index or an RSS/Atom feed."""
+    return changelog_source.load_entries(refresh)
 
 
 def items(day: date, body: str) -> list[dict]:
@@ -135,7 +118,7 @@ def main() -> None:
     through = date.fromisoformat(args.through)
 
     weeks: dict[date, list[dict]] = {}
-    for day, body in load_entries(args.refresh):
+    for day, body, _url in load_entries(args.refresh):
         if day <= through:
             weeks.setdefault(sunday_of(day), []).extend(items(day, body))
 
