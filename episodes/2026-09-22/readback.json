@@ -1,0 +1,104 @@
+[
+  {
+    "chapter": "Intro",
+    "start": 0.0,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Breaking changes and action required",
+    "start": 11.5,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Breaking changes and action required",
+    "start": 27.47,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Launches",
+    "start": 30.33,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Launches",
+    "start": 50.62,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Quick hits",
+    "start": 53.88,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Quick hits",
+    "start": 75.61,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Voice Agent",
+    "start": 81.99,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Voice Agent",
+    "start": 99.88,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Text-to-Speech",
+    "start": 104.1,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Text-to-Speech",
+    "start": 127.75,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Developer experience",
+    "start": 131.97,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Developer experience",
+    "start": 150.18,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Developer experience",
+    "start": 183.11,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Outro",
+    "start": 187.57,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Outro",
+    "start": 205.46,
+    "wer": 0.0,
+    "spans": []
+  },
+  {
+    "chapter": "Outro",
+    "start": 226.87,
+    "wer": 0.0,
+    "spans": []
+  }
+]
