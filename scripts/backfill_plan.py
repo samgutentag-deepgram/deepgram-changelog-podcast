@@ -56,7 +56,7 @@ DX = re.compile(r'\bsdk\b|\bcli\b|react|docs?\b|documentation|correction|saga|\b
 
 def load_entries(refresh: bool) -> list[tuple[date, str, str]]:
     """(day, markdown body, public URL) per changelog day. See changelog_source.py for the two
-    kinds of source it reads, an llms.txt index or an RSS/Atom feed."""
+    kinds of source it reads, an RSS/Atom feed or an llms.txt index."""
     return changelog_source.load_entries(refresh)
 
 

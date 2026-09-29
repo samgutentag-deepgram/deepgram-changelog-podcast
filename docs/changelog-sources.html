@@ -93,7 +93,7 @@
   <div class="eyebrow">The Deepgram Changelog · build your own</div>
   <h1>Do you need <span class="idx">llms.txt</span>?</h1>
   <p class="lede">No. The podcast needs every changelog entry, its date, and its full text. An
-  <span class="idx">llms.txt</span> index or an <span class="feed">RSS feed</span> can both provide that.</p>
+  <span class="feed">RSS feed</span> provides all three. An <span class="idx">llms.txt</span> is a bonus.</p>
   <div class="pic" role="img" aria-label="Two sources, the llms.txt index and the RSS feed, both turn into the same stack of daily pages, which feed the podcast.">
     <svg viewBox="0 0 900 300">
       <!-- index source -->
@@ -231,13 +231,13 @@
 
 <section>
   <div class="eyebrow">Picking yours</div>
-  <h2>Try both, count, then pick</h2>
+  <h2>Start with the feed</h2>
   <div class="pick">
-    <div class="card i"><b>Only llms.txt</b><code>CHANGELOG_INDEX_URL=…/llms.txt</code><p>Cleanest input. Check that no day hides a second entry.</p></div>
-    <div class="card f"><b>Only a feed</b><code>CHANGELOG_FEED_URL=…/feed.xml</code><p>Works if each item has the full post, not a teaser.</p></div>
-    <div class="card"><b>Both</b><code>python3 scripts/backfill_plan.py</code><p>Run it once with each. Compare the entry counts. Keep the one with more.</p></div>
+    <div class="card f"><b>Start here: your feed</b><code>CHANGELOG_FEED_URL=…/changelog.rss</code><p>Almost every changelog has one. Each item needs the full post, not a teaser.</p></div>
+    <div class="card i"><b>Bonus: llms.txt</b><code>CHANGELOG_INDEX_URL=…/llms.txt</code><p>Skips the HTML conversion. Adds no entries. Check it against the feed first.</p></div>
+    <div class="card"><b>Compare them</b><code>python3 scripts/backfill_plan.py</code><p>Free, no API calls. Run it once with each and compare the entry counts.</p></div>
   </div>
-  <p class="foot">Set one variable, not both. With neither set, the show reads Deepgram's llms.txt. Code: <code>scripts/changelog_source.py</code>.</p>
+  <p class="foot">Set one variable, not both. With neither set, the show reads Deepgram's RSS feed. Code: <code>scripts/changelog_source.py</code>.</p>
 </section>
 
 </main>

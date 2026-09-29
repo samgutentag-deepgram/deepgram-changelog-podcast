@@ -1,23 +1,24 @@
-"""Load a changelog as dated markdown entries, from an llms.txt index or from an RSS or Atom feed.
+"""Load a changelog as dated markdown entries, from an RSS or Atom feed or from an llms.txt index.
 
 The rest of the pipeline only needs a list of (date, markdown body, public URL) per changelog
 day, where each "## " heading in the body is one item. Two kinds of source produce that:
 
-1. An llms.txt-style index (CHANGELOG_INDEX_URL): a markdown list of links, one per changelog day,
-   each pointing at a clean markdown page. This is what Deepgram publishes, and it is the better
-   source: the writer reads the same markdown the docs are written in, with no HTML to clean up.
-   The day comes from the link's URL path (/2026/9/24.md) or, failing that, from its link text
-   ("September 24, 2026").
+1. An RSS 2.0 or Atom feed (CHANGELOG_FEED_URL), which is what almost every changelog publishes
+   and what the show reads by default. Each item needs a date and its full content
+   (content:encoded, Atom content, or a description that holds the whole entry, not a teaser).
+   The HTML is converted to plain markdown: headings, paragraphs, lists, links, and code survive;
+   styling does not. Items on the same day merge into one body. If an item's content has no "## "
+   heading of its own, the item title becomes one, unless the title is only a date (Deepgram's
+   feed titles every item with its day).
 
-2. An RSS 2.0 or Atom feed (CHANGELOG_FEED_URL), for a changelog without an index. Each item needs
-   a date and its full content (content:encoded, Atom content, or a description that holds the
-   whole entry, not a teaser). The HTML is converted to plain markdown: headings, paragraphs,
-   lists, links, and code survive; styling does not. Items on the same day merge into one body.
-   If an item's content has no "## " heading of its own, the item title becomes one, unless the
-   title is only a date (Deepgram's feed titles every item with its day).
+2. An llms.txt-style index (CHANGELOG_INDEX_URL), an optional alternative: a markdown list of
+   links, one per changelog day, each pointing at a clean markdown page. It skips the HTML
+   conversion and adds no entries, so check it against the feed before switching: Deepgram's
+   per-day pages carry only the first entry on a day with two. The day comes from the link's URL
+   path (/2026/9/24.md) or, failing that, from its link text ("September 24, 2026").
 
-Set exactly one of the two environment variables to point the show at another changelog. With
-neither set, it reads Deepgram's llms.txt. Everything fetched is cached under .cache/changelog.
+Set one of the two environment variables to point the show at another changelog, not both. With
+neither set, it reads Deepgram's RSS feed. Everything fetched is cached under .cache/changelog.
 """
 
 from __future__ import annotations
@@ -33,9 +34,9 @@ from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
 CACHE = ROOT / '.cache' / 'changelog'
-DEFAULT_INDEX_URL = 'https://developers.deepgram.com/changelog/llms.txt'
-INDEX_URL = os.environ.get('CHANGELOG_INDEX_URL') or (None if os.environ.get('CHANGELOG_FEED_URL') else DEFAULT_INDEX_URL)
-FEED_URL = os.environ.get('CHANGELOG_FEED_URL')
+DEFAULT_FEED_URL = 'https://developers.deepgram.com/changelog.rss'
+INDEX_URL = os.environ.get('CHANGELOG_INDEX_URL')
+FEED_URL = os.environ.get('CHANGELOG_FEED_URL') or (None if INDEX_URL else DEFAULT_FEED_URL)
 
 Entry = tuple[date, str, str]  # (day, markdown body, public URL for that day)
 
@@ -47,10 +48,10 @@ def fetch(url: str) -> str:
 
 
 def load_entries(refresh: bool = False) -> list[Entry]:
-    if INDEX_URL and FEED_URL:
+    if os.environ.get('CHANGELOG_INDEX_URL') and os.environ.get('CHANGELOG_FEED_URL'):
         raise SystemExit('set CHANGELOG_INDEX_URL or CHANGELOG_FEED_URL, not both')
     CACHE.mkdir(parents=True, exist_ok=True)
-    return from_index(INDEX_URL, refresh) if INDEX_URL else from_feed(FEED_URL, refresh)
+    return from_feed(FEED_URL, refresh) if FEED_URL else from_index(INDEX_URL, refresh)
 
 
 # ---- llms.txt index ----------------------------------------------------------------------------

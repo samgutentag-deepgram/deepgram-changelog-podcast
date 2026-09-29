@@ -38,7 +38,7 @@ flowchart LR
 
 | Step | What happens | Where |
 | --- | --- | --- |
-| Gather | Downloads the changelog (an `llms.txt` index or an RSS/Atom feed) and keeps one Sunday to Saturday week. Those entries are the only facts an episode may use. | `scripts/changelog_source.py`, `scripts/backfill_plan.py` |
+| Gather | Reads the changelog's RSS feed and keeps one Sunday to Saturday week. Those entries are the only facts an episode may use. | `scripts/changelog_source.py`, `scripts/backfill_plan.py` |
 | Write | Claude writes the summary, the segments, and the show notes. The intro, outro, cost, and contact lines are fixed text. The output is checked for known segments in order and for links that exist in the changelog. | `scripts/write_episode.py`, `docs/show-format.md` |
 | Cast | Brooke anchors; Drew, Kit, Miles, Cole, and Elise each own a segment and hand off by name. Every voice runs at expressivity 1. | `docs/cast.json` |
 | Speak | One Flux TTS call per paragraph, cached by voice and text. A few words get a spoken spelling first ("change log"). | `scripts/render_episode.py` |
@@ -142,12 +142,11 @@ segments, and the outro. If your
 product has a changelog that nobody reads either, here's the swap.
 
 1. **Get the pieces.** Python 3.9 or newer, ffmpeg, a Deepgram API key (Flux TTS and STT), an
-   Anthropic API key (the writer), and a changelog the pipeline can read. That last one doesn't
-   have to be an `llms.txt`. See [Where The Entries Come From](#where-the-entries-come-from) below.
-2. **Point it at your changelog.** Set `CHANGELOG_INDEX_URL` to your `llms.txt`, or
-   `CHANGELOG_FEED_URL` to your RSS or Atom feed. Set one, not both. With neither set it reads
-   Deepgram's. Relative links in your entries resolve against each entry's own URL, so there's no
-   docs origin to configure.
+   Anthropic API key (the writer), and your changelog's RSS or Atom feed with the full post in each
+   item. See [Where The Entries Come From](#where-the-entries-come-from) below.
+2. **Point it at your changelog.** Set `CHANGELOG_FEED_URL` to your feed. Relative links in your
+   entries resolve against each entry's own URL, so there's no docs origin to configure. The
+   [bare-bones guide](docs/bare-bones.html) is the shortest path to a first episode.
 3. **Point it at your site.** Set `SITE_URL` (the default in `scripts/produce.py`, and `[env]` in
    `fly.toml`), then rename `app` in `fly.toml`. `serve.py` reads `SITE_URL` from the environment.
 4. **Rename the show.** "The Deepgram Changelog" lives in `TITLE`, `DESCRIPTION`, `AUTHOR`, and
@@ -171,34 +170,30 @@ product has a changelog that nobody reads either, here's the swap.
    `CRON_TZ` if Pacific isn't your morning. Set the two keys with `fly secrets set`, run
    `backfill_plan.py`, then `stage_site.py` and `fly deploy`.
 
-### Where The Entries Come From
-
-An `llms.txt` isn't required. The pipeline needs every changelog entry with a date and its full
-text, and it can get that from either of two places. `scripts/changelog_source.py` is the one file
-that knows the difference, and both paths hand the rest of the pipeline the same thing: one
-markdown body per day, where each `## ` heading is one entry. The picture version is
-[`docs/changelog-sources.html`](docs/changelog-sources.html).
-
-- **An `llms.txt` index.** A markdown list of links, one per changelog day, each pointing at a
-  clean `.md` page. The date comes from the link's path (`/2026/9/24.md`) or its text
-  ("September 24, 2026"). Claude reads the same markdown the docs are written in, and nothing
-  gets converted.
-- **An RSS 2.0 or Atom feed.** Each item needs a date and its whole entry in `content:encoded`,
-  Atom `content`, or a `description` that isn't a teaser. The HTML is converted to markdown, so
-  headings, lists, links, and code make it through and styling doesn't. Items on the same day
-  merge, and an item with no heading of its own gets its title as one (unless the title is just
-  a date).
-
-If you have both, run `python3 scripts/backfill_plan.py` once with each and compare the entry
-counts in `research/backfill-review.html` before you pick. Deepgram's own two sources don't
-agree: on a day with two entries, the `.md` page behind `llms.txt` carries only the first, so the
-feed has 231 entries to the index's 219 across the same 212 days.
-
 What it costs, going by the 140 episodes on the live
 [back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog): about 10 cents of Flux
 TTS and 9 cents of Claude per episode, so roughly 19 cents a week, or about $10 for a year of
 Tuesdays. A backfill costs the same per episode, so check the week count in
 `research/backfill-review.html` before you run `--backfill`.
+
+### Where The Entries Come From
+
+All the show needs is your changelog's RSS or Atom feed. Every entry needs a date and its full
+post, not a teaser. `scripts/changelog_source.py` reads it and hands the rest of the pipeline one
+markdown body per day, where each `## ` heading is one entry. The picture version is
+[`docs/changelog-sources.html`](docs/changelog-sources.html).
+
+- **The feed (what the show reads).** Set `CHANGELOG_FEED_URL`. With nothing set, it reads
+  Deepgram's. The HTML in each item is converted to markdown, so headings, lists, links, and code
+  make it through and styling doesn't. Items on the same day merge, and an item with no heading of
+  its own gets its title as one (unless the title is just a date).
+- **Bonus: an `llms.txt` index.** If your changelog also publishes one, you can set
+  `CHANGELOG_INDEX_URL` instead. It skips the HTML conversion, so the writer reads the entries as
+  they were written, but it adds no entries. Check it against the feed first: run
+  `python3 scripts/backfill_plan.py` once with each and compare the entry counts in
+  `research/backfill-review.html`. Deepgram's doesn't match. On a day with two entries, the
+  `.md` page behind its `llms.txt` carries only the first, so the feed has 231 entries to the
+  index's 219 across the same 212 days.
 
 ## Did It Say That Right?
 
