@@ -1,0 +1,32 @@
+# Fly.io config for The Deepgram Changelog: the site, plus the weekly render on an in-container
+# cron. Episodes live on a volume so the Tuesday run can publish without a redeploy.
+app = "dg-devrel-deepgram-changelog"
+primary_region = "sjc"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  SITE_URL = "https://dg-devrel-deepgram-changelog.fly.dev"
+  EPISODES_DIR = "/data/episodes"
+
+# A 64 kbps episode is about 2 MB, so 1 GB holds roughly nine years of weekly episodes. Rendered
+# paragraph audio is deleted after each run (--clean-cache), so only MP3s and JSON accumulate.
+[mounts]
+  source = "changelog_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "off"    # the Tuesday cron needs the machine awake
+  auto_start_machines = true
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# Secrets, set once, never in this file:
+#   fly secrets set DEEPGRAM_API_KEY=...
+#   fly secrets set ANTHROPIC_API_KEY=...

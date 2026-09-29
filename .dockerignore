@@ -1,0 +1,3 @@
+# The image is built only from dist/, which scripts/stage_site.py fills from an allowlist.
+*
+!dist
