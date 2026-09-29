@@ -176,6 +176,37 @@ TTS and 9 cents of Claude per episode, so roughly 19 cents a week, or about $10 
 Tuesdays. A backfill costs the same per episode, so check the week count in
 `research/backfill-review.html` before you run `--backfill`.
 
+### Plan Your Show With Claude
+
+Not sure what to call it or how to split the segments? Clone the repo, open it in
+[Claude Code](https://claude.com/claude-code), and paste this with your two links filled in. It
+reads your changelog for free (no API keys needed) and proposes a show before it touches anything.
+
+```text
+I want to turn my product's changelog into a weekly podcast with this repo.
+
+Product: <your product name>
+Changelog page: <https://your-site/changelog>
+RSS or Atom feed: <https://your-site/changelog.rss>
+
+1. Set CHANGELOG_FEED_URL to the feed and run `python3 scripts/backfill_plan.py`. Tell me how
+   many weeks and entries it found, and whether the items carry full posts or only teasers.
+2. Read the entry titles in research/backfill-plan.json and tell me what this changelog is
+   mostly about.
+3. Suggest 5 show names, each with a one-line pitch. Nothing that sounds like the product's
+   official podcast.
+4. Propose 3 to 6 segments in running order. Keep "Breaking changes and action required",
+   "Launches", and "Quick hits" first, and name the rest after this product's areas. For each
+   one, list three real entries from the last year that would have landed in it.
+5. Propose a cast from the Flux TTS voices in docs/cast.json and
+   https://developers.deepgram.com/docs/flux-tts/overview: one anchor and a voice per segment.
+6. Draft a canned intro line and outro for my product, in the style of the ones in
+   scripts/write_episode.py, with my own support links in place of Deepgram's.
+7. List the exact edits that would make all of it real, file by file.
+
+Don't edit any files or make any paid API calls until I've picked a name and segments.
+```
+
 ### Where The Entries Come From
 
 All the show needs is your changelog's RSS or Atom feed. Every entry needs a date and its full
