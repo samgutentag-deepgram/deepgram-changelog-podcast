@@ -1,0 +1,66 @@
+{
+  "_about": "Key terms for scripts/term_test.py. Each term: a carrier sentence with {} where the candidate goes, the words STT should hear (\"|\" separates acceptable alternates), and spelling candidates to try. Winners are recorded in `decided` with the score that earned it.",
+  "terms": [
+    {
+      "id": "ttl",
+      "carrier": "The real field is called {} seconds, and it sets the token lifetime.",
+      "expect": ["ttl|t"],
+      "candidates": ["ttl", "TTL", "T T L"],
+      "decided": {"spelling": "TTL", "score": "3/3 vs lowercase 0/3", "date": "2026-09-25"}
+    },
+    {
+      "id": "auth",
+      "carrier": "The example posted a field to the {} grant endpoint.",
+      "expect": ["auth|off|oth"],
+      "candidates": ["auth", "Auth", "awth", "auth slash grant"]
+    },
+    {
+      "id": "speakv2speed",
+      "carrier": "It removes the {} type and its named constants.",
+      "expect": ["speak", "v2|v|b", "speed"],
+      "candidates": ["SpeakV2Speed", "Speak V2 Speed", "Speak V two Speed", "SpeakV2 Speed"]
+    },
+    {
+      "id": "vad",
+      "carrier": "The {} option on the microphone never existed.",
+      "expect": ["vad|v"],
+      "candidates": ["vad", "VAD", "V A D", "vee ay dee"]
+    },
+    {
+      "id": "onnxruntime",
+      "carrier": "If you installed the {} package, you can uninstall it.",
+      "expect": ["onnx|onyx|onix", "runtime"],
+      "candidates": ["onnxruntime", "onnxruntime web", "ONNX Runtime", "onyx runtime"]
+    },
+    {
+      "id": "force-end-turn",
+      "carrier": "{} is now in all three SDKs.",
+      "expect": ["force", "end", "turn"],
+      "candidates": ["Force end turn", "ForceEndTurn", "Force End Turn", "The force end turn message"]
+    },
+    {
+      "id": "v2-listen",
+      "carrier": "It covers speech-to-text on {} and text-to-speech on speak.",
+      "expect": ["v1|one", "v2|two", "listen"],
+      "candidates": ["v1 and v2 listen", "V1 and V2 listen", "v one and v two listen", "slash v1 and slash v2 slash listen"]
+    },
+    {
+      "id": "dpgr",
+      "carrier": "Find us on Discord at {}.",
+      "expect": ["d", "p", "g", "r", "am|a"],
+      "candidates": ["dpgr dot am slash discord", "D P G R dot A M slash discord", "dpgr.am/discord"]
+    },
+    {
+      "id": "perseo",
+      "carrier": "The {} Italian model name is gone from the list.",
+      "expect": ["perseo|perseus|persio"],
+      "candidates": ["aura two perseo", "Aura 2 Perseo", "aura-2-perseo-it"]
+    },
+    {
+      "id": "hundredths",
+      "carrier": "Speed runs from half speed to one and a half times, in steps of {}.",
+      "expect": ["hundredths|005|0"],
+      "candidates": ["five hundredths", "zero point zero five", "0.05"]
+    }
+  ]
+}
