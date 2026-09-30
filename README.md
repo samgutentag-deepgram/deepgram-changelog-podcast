@@ -5,7 +5,7 @@ it to you. Every Tuesday at 5am Pacific, a Fly machine pulls last week's entries
 script, six Deepgram Flux TTS voices perform it, and Deepgram speech-to-text checks every line
 before it ships. Nobody records anything (the closest thing to a studio is a Python script).
 
-There are 140 episodes so far, going back to 2020. They run one to five minutes, and a typical
+There are 141 episodes so far, going back to 2020. They run one to six minutes, and a typical
 week comes in around two.
 
 Listen: [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-changelog.fly.dev) ·
@@ -14,7 +14,7 @@ Listen: [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-change
 
 This repo is the code, not the archive. A clone has no audio at all: MP3s are gitignored, and the
 only episode in `episodes/` is `2026-09-22`, kept as a worked example (its script, show notes,
-chapters, transcript, and readback report, but no MP3). All 140 episodes live on the site's volume
+chapters, transcript, and readback report, but no MP3). All 141 episodes live on the site's volume
 and play from the links above.
 
 ## From Changelog To Your Queue
@@ -127,7 +127,7 @@ Episodes the cron made only exist on the volume. The machine reads `DEEPGRAM_API
 `ANTHROPIC_API_KEY` from Fly secrets. Locally, set `ART_PYTHON` if your default Python doesn't have
 Pillow.
 
-**Storage:** an episode takes about 1.5 MB on the volume (a 64 kbps MP3 plus art and JSON). All 140
+**Storage:** an episode takes about 1.5 MB on the volume (a 64 kbps MP3 plus art and JSON). All 141
 use about 175 MB of the 1 GB volume, and new weeks add roughly 75 MB a year. The server deletes its
 raw paragraph audio (`.cache/tts`) after each run. Locally it's kept, so editing a script only
 re-renders the paragraphs you changed.
@@ -170,9 +170,9 @@ product has a changelog that nobody reads either, here's the swap.
    `CRON_TZ` if Pacific isn't your morning. Set the two keys with `fly secrets set`, run
    `backfill_plan.py`, then `stage_site.py` and `fly deploy`.
 
-What it costs, going by the 140 episodes on the live
+What it costs, going by the 141 episodes on the live
 [back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog): about 10 cents of Flux
-TTS and 9 cents of Claude per episode, so roughly 19 cents a week, or about $10 for a year of
+TTS and 9 cents of Claude per episode, so roughly 20 cents a week, or about $10 for a year of
 Tuesdays. A backfill costs the same per episode, so check the week count in
 `research/backfill-review.html` before you run `--backfill`.
 
