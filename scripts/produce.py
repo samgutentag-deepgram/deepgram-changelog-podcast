@@ -2,6 +2,7 @@
 
 Usage:
   python3 scripts/produce.py 2026-09-15                 one episode, by Tuesday release date
+  python3 scripts/produce.py 2026-09-15 2026-09-08 --jobs 3   several, three at a time
   python3 scripts/produce.py --weekly                   the week that just ended, plus a 4 week sweep (the cron job)
   python3 scripts/produce.py --weekly --dry-run         what the cron job would produce today, without producing it
   python3 scripts/produce.py --backfill 2026 --jobs 3   every planned week in a year not yet rendered
@@ -27,10 +28,12 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, timedelta
 from pathlib import Path
 
+from show import SHOW
+
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / 'scripts'
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
-SITE_URL = os.environ.get('SITE_URL', 'https://dg-devrel-deepgram-changelog.fly.dev')
+SITE_URL = SHOW['site_url']
 PY = sys.executable
 SWEEP_WEEKS = 4  # past weeks re-checked every Tuesday for entries that arrived late
 # The art step needs Pillow, which the rest of the pipeline does not. The container installs it
@@ -92,7 +95,7 @@ def last_tuesday(today: date) -> date:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument('release', nargs='?')
+    ap.add_argument('release', nargs='*', help='one or more Tuesday release dates')
     ap.add_argument('--weekly', action='store_true')
     ap.add_argument('--backfill', help='year, e.g. 2026')
     ap.add_argument('--jobs', type=int, default=1)
@@ -108,7 +111,7 @@ def main() -> None:
         run(str(SCRIPTS / 'backfill_plan.py'), '--refresh',
             '--through', (latest - timedelta(days=3)).isoformat())
     if args.release:
-        targets = [args.release]
+        targets = list(args.release)
     elif args.weekly:
         # The week that just ended, plus a sweep of the SWEEP_WEEKS before it. The sweep catches
         # changelog entries that were posted or backdated into a past week after that week's own

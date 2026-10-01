@@ -18,14 +18,15 @@ from datetime import datetime, timezone
 from email.utils import format_datetime
 from pathlib import Path
 
+from show import ATTRIBUTION_TEXT, SHOW
+
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
-TITLE = 'The Deepgram Changelog'
-DESCRIPTION = ('The Deepgram developer changelog, read back to you every Tuesday. Breaking changes '
-               'first, then launches, then everything else that shipped the week before, with a '
-               'link to the docs for every item. Voiced start to finish by Deepgram Flux TTS.')
-AUTHOR = 'Deepgram DevRel'
-OWNER_EMAIL = 'devrel@deepgram.com'
+TITLE = SHOW['name']
+DESCRIPTION = SHOW['description'] + (
+    '' if not SHOW['attribution'] or 'Flux TTS' in SHOW['description'] else f' {ATTRIBUTION_TEXT}.')
+AUTHOR = SHOW['author']
+OWNER_EMAIL = SHOW['owner_email']
 RELEASE_HOUR_UTC = 16  # Tuesday 9am Pacific
 
 

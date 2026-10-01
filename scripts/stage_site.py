@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parent.parent
 DIST = ROOT / 'dist'
 SCRIPTS = ('serve.py', 'produce.py', 'write_episode.py', 'render_episode.py', 'readback_check.py',
            'fill_cost.py', 'build_feed.py', 'build_catalog.py', 'backfill_plan.py', 'make_art.py',
-           'seed_volume.py', 'weekly_run.py', 'alerts.py', 'changelog_source.py')
+           'seed_volume.py', 'weekly_run.py', 'alerts.py', 'changelog_source.py', 'show.py')
 DOCS = ('show-format.md', 'cast.json', 'example-episode.md', 'key-terms.json')
 RESEARCH = ('backfill-plan.json',)
 EPISODE_FILES = ('episode.mp3', 'episode.json', 'chapters.json', 'script.json', 'transcript.vtt',
@@ -35,7 +35,7 @@ def main() -> None:
             if not src.exists():
                 raise SystemExit(f'{folder}/{name} is missing')
             shutil.copy2(src, DIST / folder / name)
-    for name in ('crontab', 'docker-entrypoint.sh'):
+    for name in ('crontab', 'docker-entrypoint.sh', 'show.json'):
         shutil.copy2(ROOT / name, DIST / name)
     seed = DIST / 'seed' / 'episodes'
     seed.mkdir(parents=True)

@@ -33,6 +33,8 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
+from show import ATTRIBUTION_TEXT, SHOW
+
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = ROOT / 'episodes'
 BRAND_CSS = ROOT / 'web' / 'brand.css'
@@ -46,6 +48,10 @@ ORB_GROUND = (16, 16, 20)    # the rgb(16,16,20) rect under every official orb
 
 # Only used when brand.css is missing or a voice has no rule in it. Brooke's run.
 FALLBACK_PALETTE = {'l': (161, 215, 253), 'm': (29, 157, 251), 'd': (61, 22, 143), 'g': (61, 22, 143)}
+
+SMALL, BIG = SHOW['wordmark']
+# A fork's art credits the voices; Deepgram's own show already says Deepgram in the wordmark.
+CREDIT = ATTRIBUTION_TEXT if SHOW['attribution'] and 'Deepgram' not in SMALL + BIG else ''
 
 RUNNING_ORDER = ['Intro', 'Breaking changes and action required', 'Launches', 'Quick hits',
                  'Voice Agent', 'Speech-to-Text', 'Text-to-Speech', 'Developer experience', 'Outro']
@@ -258,12 +264,12 @@ def fit(text: str, candidates: list[tuple[str, int]], size: int, max_w: float):
 
 def wordmark(d: ImageDraw.ImageDraw, x: float, y: float, small: int, big: int, max_w: float,
              gap: float) -> float:
-    """'The Deepgram' over a large 'Changelog'. Returns the bottom edge of the big line."""
-    d.text((x, y), 'The Deepgram', font=font(SANS_MEDIUM, small), fill=INK, anchor='lt')
-    f = fit('Changelog', SANS_BOLD, big, max_w)
+    """The small wordmark line over the big one (show.json). Returns the bottom edge of the big line."""
+    d.text((x, y), SMALL, font=fit(SMALL, SANS_MEDIUM, small, max_w), fill=INK, anchor='lt')
+    f = fit(BIG, SANS_BOLD, big, max_w)
     top = y + small + gap
-    d.text((x - f.size * 0.04, top), 'Changelog', font=f, fill=INK, anchor='lt')
-    bbox = d.textbbox((x, top), 'Changelog', font=f, anchor='lt')
+    d.text((x - f.size * 0.04, top), BIG, font=f, fill=INK, anchor='lt')
+    bbox = d.textbbox((x, top), BIG, font=f, anchor='lt')
     return bbox[3]
 
 
@@ -302,6 +308,8 @@ def make_cover(out: Path = EPISODES / 'cover.png') -> Path:
         wx = text_x + mono.getlength('+ ' + label) + 70
         waveform(img, wx, size, y, pitch * 0.34, 14, palettes.get(voice, FALLBACK_PALETTE), label)
 
+    if CREDIT:
+        d.text((size - margin, size - 110), CREDIT, font=font(SANS_MEDIUM, 64), fill=MUTED, anchor='rs')
     out.parent.mkdir(parents=True, exist_ok=True)
     img.convert('RGB').save(out, optimize=True)
     return out
@@ -360,9 +368,11 @@ def make_episode_art(ep_dir: Path) -> Path:
     margin = 110
 
     # The same wordmark as the cover, set small, so a feed of these reads as one show.
-    d.text((margin, 104), 'The Deepgram', font=font(SANS_MEDIUM, 46), fill=INK, anchor='lt')
-    d.text((margin + font(SANS_MEDIUM, 46).getlength('The Deepgram '), 104), 'Changelog',
-           font=font(SANS_BOLD, 46), fill=INK, anchor='lt')
+    small_f = font(SANS_MEDIUM, 46)
+    d.text((margin, 104), SMALL, font=small_f, fill=INK, anchor='lt')
+    d.text((margin + small_f.getlength(SMALL + ' '), 104), BIG, font=font(SANS_BOLD, 46), fill=INK, anchor='lt')
+    if CREDIT:
+        d.text((size - margin, size - 56), CREDIT, font=font(SANS_MEDIUM, 30), fill=MUTED, anchor='rs')
 
     dates, year = _date_range(episode)
     fdate = fit(dates, SANS_BOLD, 150, size - 2 * margin)

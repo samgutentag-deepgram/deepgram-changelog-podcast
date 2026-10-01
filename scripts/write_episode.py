@@ -28,6 +28,7 @@ import anthropic
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from backfill_plan import human_range, items, load_entries  # noqa: E402
+from show import SHOW  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -76,7 +77,7 @@ CANNED_NOTES = {
 PROMO_NOTE = ('Flux TTS credit match terms',
               'https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions')
 
-SYSTEM = """You write scripts for The Deepgram Changelog, a weekly podcast that reads the Deepgram developer changelog back to developers. Text-to-speech voices perform every word, so you write for the ear.
+SYSTEM = """You write scripts for {show}, a weekly podcast that reads the Deepgram developer changelog back to developers. Text-to-speech voices perform every word, so you write for the ear.
 
 The show's full format spec follows, then the cast, then a finished example episode. The spec is authoritative. Follow its editorial rule, segment rules, segment announcements, handoff rules, and pronunciation guidance exactly.
 
@@ -242,7 +243,7 @@ def assemble(raw: str, release: date, start: date, end: date, entries: list[dict
         canned['Credits and pricing'] = canned['Credits and pricing'][:1] + [PROMO_NOTE] + canned['Credits and pricing'][1:]
     canned_md = '\n\n'.join(f'**{k}**\n\n' + '\n'.join(f'- [{a}]({b})' for a, b in v) for k, v in canned.items())
     source = '\n'.join(f"- {it['date']}: {it['title']} ({it['url']})" for it in entries)
-    return f"""# The Deepgram Changelog, week of {start.isoformat()} to {end.isoformat()}
+    return f"""# {SHOW['name']}, week of {start.isoformat()} to {end.isoformat()}
 
 **Summary:** {summary}
 
@@ -253,7 +254,7 @@ under a segment heading is spoken. Show notes are at the bottom.
 
 ## Intro
 
-Hello, this is {cast['anchor']['name']} with The Deepgram Changelog. Changelogs from the week of {spoken_day(start)} to {spoken_day(end)}. Links to every docs page mentioned are in the show notes.{intro_handoff}
+Hello, this is {cast['anchor']['name']} with {SHOW['name']}. Changelogs from the week of {spoken_day(start)} to {spoken_day(end)}. Links to every docs page mentioned are in the show notes.{intro_handoff}
 
 {segs}
 
@@ -282,6 +283,7 @@ Source entries:
 def build_prompts(release: date, start: date, end: date, entries: list[dict], cast: dict) -> tuple[str, str]:
     """The exact system and user prompts for one episode. Shared with estimate_writer_cost.py."""
     system = SYSTEM.format(
+        show=SHOW['name'],
         spec=(ROOT / 'docs' / 'show-format.md').read_text(),
         cast=json.dumps(cast, indent=2),
         example=(ROOT / 'docs' / 'example-episode.md').read_text().split("## Writer's notes")[0],

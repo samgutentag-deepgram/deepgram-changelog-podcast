@@ -92,7 +92,8 @@ import { mmss, usd, count } from './format.js'
   }
 
   function render(ep, rows, chapters) {
-    document.title = 'The Deepgram Changelog: ' + ep.title
+    // The server put the show's name in front of the colon; keep it and swap the episode title.
+    document.title = document.title.split(':')[0] + ': ' + ep.title
     document.getElementById('title').textContent = ep.title
     var multi = !!(ep.cast && ep.cast.length)
     document.getElementById('meta').textContent = 'Hosted by ' + ep.host

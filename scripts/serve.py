@@ -17,6 +17,8 @@ from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
+from show import ATTRIBUTION_TEXT, SHOW, attribution_url
+
 ROOT = Path(__file__).resolve().parent.parent
 WEB = ROOT / 'web'
 # On Fly the episodes live on a volume (EPISODES_DIR=/data/episodes) so the weekly run can add to
@@ -29,9 +31,13 @@ SERVED = re.compile(r'^(?:feed\.xml|index\.json|catalog\.json|cover\.(?:png|jpg)
                     r'transcript\.vtt|art\.(?:png|jpg)))$')
 PAGES = {'/back-catalog': 'back-catalog.html'}
 SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
-SITE_TITLE = 'The Deepgram Changelog'
+SITE_TITLE = SHOW['name']
+# The pages are written with the Deepgram show's name in them, so they read as finished HTML in
+# the repo. Serving swaps in show.json's name, and adds the credit line when attribution is on.
+PAGE_NAME = 'The Deepgram Changelog'
 # Checked before the id touches a path, so a separator can never sneak in.
 ID_OK = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
+LEDE = re.compile(r'(<p class="lede" id="show-lede">).*?</p>', re.S)
 SHORT = re.compile(r'^/e/([^/?#]+)/?(?:[?#].*)?$')
 
 
@@ -64,14 +70,41 @@ class Handler(SimpleHTTPRequestHandler):
         super().end_headers()
 
     def do_GET(self) -> None:
-        if self.short_page():
+        if self.short_page() or self.html_page():
             return
         super().do_GET()
 
     def do_HEAD(self) -> None:
-        if self.short_page(head_only=True):
+        if self.short_page(head_only=True) or self.html_page(head_only=True):
             return
         super().do_HEAD()
+
+    def html_page(self, head_only: bool = False) -> bool:
+        path = Path(self.translate_path(self.path))
+        if path.is_dir():
+            path = path / 'index.html'
+        if path.suffix != '.html' or not path.is_file() or WEB.resolve() not in path.resolve().parents:
+            return False
+        self.send_page(path.read_text(), head_only)
+        return True
+
+    def send_page(self, page: str, head_only: bool) -> None:
+        page = page.replace(PAGE_NAME, html.escape(SITE_TITLE))
+        if SITE_TITLE != PAGE_NAME and SHOW['description']:
+            # A renamed show gets its own description in place of the Deepgram show's lede.
+            page = LEDE.sub(lambda m: m.group(1) + html.escape(SHOW['description']) + '</p>', page, count=1)
+        if SHOW['attribution']:
+            base = SITE_URL or f'http://{self.headers.get("Host", "localhost")}'
+            credit = (f'\n  &middot; <a class="credit" href="{html.escape(attribution_url(base), quote=True)}" '
+                      f'target="_blank" rel="noopener">{ATTRIBUTION_TEXT}</a>\n</footer>')
+            page = page.replace('\n</footer>', credit, 1)
+        body = page.encode()
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8')
+        self.send_header('Content-Length', str(len(body)))
+        self.end_headers()
+        if not head_only:
+            self.wfile.write(body)
 
     def short_page(self, head_only: bool = False) -> bool:
         """Serve episode.html for /e/<id> with that episode's title and unfurl tags in the head.
@@ -106,15 +139,9 @@ class Handler(SimpleHTTPRequestHandler):
             meta('name', 'twitter:card', 'summary'),
         ])
         page = (WEB / 'episode.html').read_text().replace(
-            '<title>The Deepgram Changelog: Episode</title>',
-            f'<title>{html.escape(SITE_TITLE)}: {html.escape(title)}</title>\n{head}', 1)
-        body = page.encode()
-        self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.send_header('Content-Length', str(len(body)))
-        self.end_headers()
-        if not head_only:
-            self.wfile.write(body)
+            f'<title>{PAGE_NAME}: Episode</title>',
+            f'<title>{PAGE_NAME}: {html.escape(title)}</title>\n{head}', 1)
+        self.send_page(page, head_only)
         return True
 
     def send_head(self):

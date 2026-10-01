@@ -33,8 +33,10 @@ from html.parser import HTMLParser
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
+from show import SHOW
+
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_FEED_URL = 'https://developers.deepgram.com/changelog.rss'
+DEFAULT_FEED_URL = SHOW['feed_url']
 INDEX_URL = os.environ.get('CHANGELOG_INDEX_URL')
 FEED_URL = os.environ.get('CHANGELOG_FEED_URL') or (None if INDEX_URL else DEFAULT_FEED_URL)
 # One cache directory per source URL, so pointing at a different changelog never reads the old one.

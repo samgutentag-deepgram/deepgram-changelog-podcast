@@ -197,3 +197,18 @@ html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
 
 /* Back catalog: an estimated writer cost reads quieter than a measured one. */
 .bc-cost.is-estimate { font-style: italic; color: var(--dg-ink-muted); }
+
+/* Header link to the back catalog, styled as a sibling of the Subscribe button. */
+.nav-pill {
+  display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0 0.7rem;
+  font-size: 0.72rem; letter-spacing: 0.02em; color: var(--dg-text-label); text-decoration: none;
+  background: var(--dg-bg-well); border: 1px solid var(--dg-border); border-radius: var(--dg-shape-pill);
+}
+.nav-pill:hover { color: var(--dg-text-primary); border-color: var(--dg-border-hover); }
+@media (max-width: 640px) { .nav-pill { min-height: 2.75rem; } }
+
+/* Back catalog: the local-only "render more" box. */
+.bc-more { margin-top: 1rem; }
+.bc-more p { margin: 0 0 0.6rem; }
+.bc-cmd { margin: 0 0 0.6rem; padding: 0.6rem 0.8rem; overflow-x: auto; border: 1px solid var(--dg-border);
+  border-radius: var(--dg-shape-panel); background: var(--dg-bg-well); font-size: 0.82rem; }

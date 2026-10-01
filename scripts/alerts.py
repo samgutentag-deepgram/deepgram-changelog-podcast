@@ -27,11 +27,14 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import show  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 
 TIMEOUT_SECONDS = 10
 PUSHOVER_URL = 'https://api.pushover.net/1/messages.json'
-SHOW = 'Deepgram Changelog'
+SHOW = show.SHOW['name'].removeprefix('The ')
 MARKS = {'ok': '✅', 'retry': '🔁', 'fail': '❌'}
 
 

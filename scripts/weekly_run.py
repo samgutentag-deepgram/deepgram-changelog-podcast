@@ -33,10 +33,12 @@ from pathlib import Path
 
 from alerts import notify
 
+from show import SHOW
+
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
 RUNS = Path(os.environ.get('RUNS_DIR', EPISODES.parent / 'runs'))
-SITE_URL = os.environ.get('SITE_URL', 'https://dg-devrel-deepgram-changelog.fly.dev')
+SITE_URL = SHOW['site_url']
 KEEP_RUNS = 104  # two years of Tuesdays; each bundle is a few hundred KB
 ATTEMPTS = 3
 RETRY_WAIT_S = 300  # the 2026-09-29 Flux failure passed on a rerun about four hours later

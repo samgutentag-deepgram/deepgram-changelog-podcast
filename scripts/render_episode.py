@@ -27,6 +27,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from show import SHOW  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
 SAMPLE_RATE = 24000
@@ -195,14 +198,15 @@ def main() -> None:
     raw = ep / '.episode.pcm'
     raw.write_bytes(pcm)
     meta = ep / '.chapters.ffmeta'
-    lines = [';FFMETADATA1', 'title=The Deepgram Changelog']
+    lines = [';FFMETADATA1', f"title={SHOW['name']}"]
     for c in chapters:
         lines += ['[CHAPTER]', 'TIMEBASE=1/1000', f'START={int(c["start"] * 1000)}',
                   f'END={int(c["end"] * 1000)}', f'title={c["title"]}']
     meta.write_text('\n'.join(lines) + '\n')
     try:
         subprocess.run(
-            ['ffmpeg', '-y', '-loglevel', 'error', '-f', 's16le', '-ar', str(SAMPLE_RATE), '-ac', '1',
+            # -nostdin: without it ffmpeg reads the terminal and eats keystrokes meant for a prompt.
+            ['ffmpeg', '-nostdin', '-y', '-loglevel', 'error', '-f', 's16le', '-ar', str(SAMPLE_RATE), '-ac', '1',
              '-i', str(raw), '-i', str(meta), '-map_metadata', '1', '-map_chapters', '1',
              '-codec:a', 'libmp3lame', '-b:a', '64k', str(ep / 'episode.mp3')],
             check=True,

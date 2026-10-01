@@ -106,6 +106,7 @@ import { usd, count } from './format.js'
           ? 'estimated for the other ' + count(planned) + ', at the ' + usd(t.avg_cost_usd, 4) + ' average'
           : 'estimated once one episode is published' }
     ]
+    renderMore(t, planned)
     figures.innerHTML = ''
     cells.forEach(function (f) {
       var c = el('div', 'cost-figure' + (f.cls ? ' ' + f.cls : ''))
@@ -113,6 +114,21 @@ import { usd, count } from './format.js'
       c.appendChild(el('span', 'cost-label', f.label))
       figures.appendChild(c)
     })
+  }
+
+  // Local only: on your own machine the catalog doubles as the to-do list, so say what the rest
+  // would cost all in and how to start it. On a public deploy visitors can't run the command.
+  function renderMore(t, planned) {
+    var box = document.getElementById('bc-more')
+    var local = /^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)
+    if (!box || !local || !planned) { if (box) box.hidden = true; return }
+    var each = t.avg_cost_usd != null && t.published
+      ? t.avg_cost_usd + (t.writer_tracked ? t.writer_usd_published / t.writer_tracked : 0) : null
+    document.getElementById('bc-more-text').textContent = count(planned) + ' week'
+      + (planned === 1 ? ' has' : 's have') + ' changelog entries and no episode yet.'
+      + (each != null ? ' At this show\u2019s average of ' + usd(each, 2) + ' an episode, Flux TTS plus Claude, '
+        + 'rendering all of them costs about ' + usd(each * planned, 2) + '.' : '')
+    box.hidden = false
   }
 
   function yearOf(e) { return String(e.start || e.release || e.id).slice(0, 4) }
