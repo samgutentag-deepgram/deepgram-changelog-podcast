@@ -23,6 +23,7 @@ neither set, it reads Deepgram's RSS feed. Everything fetched is cached under .c
 
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import urllib.request
@@ -33,10 +34,11 @@ from pathlib import Path
 from xml.etree import ElementTree as ET
 
 ROOT = Path(__file__).resolve().parent.parent
-CACHE = ROOT / '.cache' / 'changelog'
 DEFAULT_FEED_URL = 'https://developers.deepgram.com/changelog.rss'
 INDEX_URL = os.environ.get('CHANGELOG_INDEX_URL')
 FEED_URL = os.environ.get('CHANGELOG_FEED_URL') or (None if INDEX_URL else DEFAULT_FEED_URL)
+# One cache directory per source URL, so pointing at a different changelog never reads the old one.
+CACHE = ROOT / '.cache' / 'changelog' / hashlib.sha256((FEED_URL or INDEX_URL).encode()).hexdigest()[:12]
 
 Entry = tuple[date, str, str]  # (day, markdown body, public URL for that day)
 

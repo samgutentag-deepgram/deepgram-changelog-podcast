@@ -61,10 +61,15 @@ It's the canonical copy; open it locally, since GitHub shows HTML as source. Ima
 You'll need Python 3.9 or newer, ffmpeg, and two packages: `anthropic` (the writer) and `pillow` (the art).
 Keys go in a gitignored `.env` (only the render and write steps use them):
 
+```bash
+git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
+cd deepgram-changelog-podcast
+brew install ffmpeg                        # or your package manager's ffmpeg
+python3 -m pip install anthropic pillow    # in a venv, or add --break-system-packages
+cp .env.sample .env                        # then fill in DEEPGRAM_API_KEY and ANTHROPIC_API_KEY
 ```
-DEEPGRAM_API_KEY=...
-ANTHROPIC_API_KEY=...
-```
+
+The scripts read keys from the environment, not from `.env`, so load it in every new shell:
 
 ```bash
 set -a; . ./.env; set +a
@@ -78,6 +83,11 @@ python3 scripts/produce.py --weekly --dry-run
 # Serve the site at http://localhost:8010
 python3 scripts/serve.py
 ```
+
+Rendering the example episode takes about 6 minutes and about 18 cents of Flux TTS. Its script is
+already in the repo, so it makes no Claude call. It rewrites the tracked files in
+`episodes/2026-09-22/`, so expect a dirty working tree afterward. A real `--weekly` on a fresh clone
+produces the latest week plus up to four earlier ones it sweeps for late entries, so run `--dry-run` first.
 
 On a fresh clone, `serve.py` works with no keys and no renders. The home page lists nothing yet,
 because the feed and episode list only count episodes that have an MP3, but

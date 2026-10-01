@@ -2,7 +2,7 @@
 draft guess at which segments each episode would have. Writes research/backfill-plan.json and
 research/backfill-review.html.
 
-Usage: python3 scripts/backfill_plan.py [--through 2026-09-19] [--refresh]
+Usage: python3 scripts/backfill_plan.py [--through YYYY-MM-DD] [--refresh]
 
 The segment guesses are keyword rules over each entry's heading and body, applied in running
 order so an item lands in exactly one segment, the way the show airs it. They are a first pass for
@@ -98,6 +98,12 @@ def segment_for(item: dict, launches_by_week: set[str]) -> str:
     return SEGMENTS[2]
 
 
+def last_saturday(today: date | None = None) -> date:
+    """The most recent Saturday whose week has ended. On a Saturday that is the week before."""
+    today = today or date.today()
+    return today - timedelta(days=(today.weekday() - 5) % 7 or 7)
+
+
 def sunday_of(d: date) -> date:
     return d - timedelta(days=(d.weekday() + 1) % 7)
 
@@ -112,7 +118,7 @@ def human_range(a: date, b: date) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument('--through', default='2026-09-19', help='last Saturday to include')
+    ap.add_argument('--through', default=last_saturday().isoformat(), help='last Saturday to include')
     ap.add_argument('--refresh', action='store_true')
     args = ap.parse_args()
     through = date.fromisoformat(args.through)
