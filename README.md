@@ -29,19 +29,20 @@ week of a bigger changelog costs more: a test on Claude Code's changelog came to
 1. **Get two API keys.** [Deepgram](https://console.deepgram.com/signup) for the voices and the
    listen-back check (new accounts start with $200 in credit), and
    [Anthropic](https://console.anthropic.com) for the writer.
-2. **Clone and install.** You need Python 3.9 or newer and ffmpeg.
+2. **Clone and install.** You need git, Python 3.9 or newer, and ffmpeg. On a brand new Mac,
+   run `xcode-select --install` first (it brings git and Python 3.9), then install
+   [Homebrew](https://brew.sh) for ffmpeg. The packages go in a virtual environment, which works
+   the same on every Python and keeps them out of your system's.
 
    ```bash
    git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
    cd deepgram-changelog-podcast
-   brew install ffmpeg                        # or your package manager's ffmpeg
-   python3 -m pip install anthropic pillow    # see the note below if pip refuses
-   cp .env.sample .env                        # then add DEEPGRAM_API_KEY and ANTHROPIC_API_KEY
+   brew install ffmpeg                    # or your package manager's ffmpeg
+   python3 -m venv .venv
+   source .venv/bin/activate              # once per new terminal
+   pip install anthropic pillow
+   cp .env.sample .env                    # then add DEEPGRAM_API_KEY and ANTHROPIC_API_KEY
    ```
-
-   If pip says the environment is "externally managed" (Homebrew's Python), add
-   `--break-system-packages` or use a venv. Older pips, like the one in macOS's built-in Python 3.9,
-   don't know that flag and don't need it; add `--user` if they ask for permissions instead.
 
 3. **Name your show.** Open `show.json` and set `name`, `wordmark` (the two lines drawn on the
    art), `description`, `author`, `owner_email`, `changelog_url`, and `feed_url`. Leave `site_url`

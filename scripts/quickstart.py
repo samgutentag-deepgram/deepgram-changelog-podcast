@@ -63,7 +63,7 @@ def check_setup() -> None:
         problems.append('ffmpeg is not on your PATH. On a Mac: brew install ffmpeg')
     for module, package in (('anthropic', 'anthropic'), ('PIL', 'pillow')):
         if importlib.util.find_spec(module) is None:
-            problems.append(f'The {package} package is missing: python3 -m pip install {package}')
+            problems.append(f'The {package} package is missing. With your venv active: pip install {package}')
     for key, where in (('DEEPGRAM_API_KEY', 'https://console.deepgram.com/signup'),
                        ('ANTHROPIC_API_KEY', 'https://console.anthropic.com')):
         if not os.environ.get(key):
