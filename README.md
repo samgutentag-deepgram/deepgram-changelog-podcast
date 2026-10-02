@@ -1,7 +1,7 @@
 # The Deepgram Changelog
 
 Deepgram ships something almost every week, and almost nobody reads the changelog. So I built a
-show that reads it to you. Every Tuesday at 5am Pacific, a Fly machine pulls last week's entries,
+show that reads it to you, and the same code turns any RSS feed into a podcast. Every Tuesday at 5am Pacific, a Fly machine pulls last week's entries,
 Claude writes the script, six Deepgram Flux TTS voices perform it, and Deepgram speech-to-text
 checks every line before it ships. Nobody records anything.
 
@@ -17,10 +17,12 @@ episode in `episodes/` is `2026-09-22`, kept as a worked example with its script
 chapters, transcript, and readback report. All 141 episodes live on the site and play from the
 links above.
 
-## Make One For Your Changelog
+## Make One From Any RSS Feed
 
-If your product has a changelog with an RSS or Atom feed, you can have your own show running on
-your laptop in under half an hour. Deepgram's show averages about 20 cents an episode, all in. A busy
+Point this at an RSS or Atom feed and you get a multi-voice podcast of it. It's built around
+changelogs, and a changelog fits the segments out of the box, but any feed that carries full posts
+works. A blog or news feed will want its own segments (see [What Else To Change](#what-else-to-change)).
+You can have your own show running on your laptop in under half an hour. Deepgram's show averages about 20 cents an episode, all in. A busy
 week of a bigger changelog costs more: a test on Claude Code's changelog came to 95 cents for a
 10-minute episode.
 
