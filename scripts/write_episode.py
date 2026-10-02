@@ -2,8 +2,8 @@
 
 Usage: python3 scripts/write_episode.py 2026-09-22 [--force]
 
-The argument is the Tuesday release date. The episode covers the Sunday to Saturday before it
-(release minus 9 days through release minus 3). Claude writes only the summary, the segments in
+The argument is the release date. The episode covers the window that release publishes: by
+default the Sunday to Saturday before a Tuesday, or whatever show.json's cadence says. Claude writes only the summary, the segments in
 between, and their show notes. The intro, the outro, and the cost figures are canned and filled
 here, so the parts that make claims about money and contact details never come from a model.
 
@@ -29,6 +29,7 @@ import anthropic
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from backfill_plan import human_range, items, load_entries  # noqa: E402
 from show import SHOW  # noqa: E402
+from cadence import CADENCE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -51,7 +52,10 @@ ORDINAL = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'six
            27: 'twenty seventh', 28: 'twenty eighth', 29: 'twenty ninth', 30: 'thirtieth',
            31: 'thirty first'}
 
-OUTRO_COST = ("That's the week. This episode was voiced start to finish by Deepgram Flux TTS, and "
+# How the outro wraps up the window it covered, per cadence.
+WRAP = {'weekly': "That's the week.", 'biweekly': "That's two weeks of changes.", 'monthly': "That's the month."}
+LAUNCHES = {'weekly': "this week's launches", 'biweekly': 'the launches', 'monthly': "this month's launches"}
+OUTRO_COST = (WRAP[CADENCE.name] + " This episode was voiced start to finish by Deepgram Flux TTS, and "
               "rendering it cost thirty cents, at the pay as you go rate. Looking to start building "
               "with Deepgram? New Console accounts start with a two hundred dollar credit, which "
               "covers more than one thousand episodes like this one.")
@@ -65,7 +69,7 @@ OUTRO_HELP = ("Need more help, or have questions about anything in today's episo
               "Discord at D P G R dot A M slash discord, or in GitHub Discussions under the Deepgram "
               "org. If you think something's down, check status dot deepgram dot com first. The full "
               "changelog can be found at developers dot deepgram dot com slash changelog. See you "
-              "next Tuesday!")
+              f"{CADENCE.next_phrase()}!")
 CANNED_NOTES = {
     'Credits and pricing': [('Deepgram pricing', 'https://deepgram.com/pricing'),
                             ('Sign up for Console', 'https://console.deepgram.com')],
@@ -77,7 +81,7 @@ CANNED_NOTES = {
 PROMO_NOTE = ('Flux TTS credit match terms',
               'https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions')
 
-SYSTEM = """You write scripts for {show}, a weekly podcast that reads the Deepgram developer changelog back to developers. Text-to-speech voices perform every word, so you write for the ear.
+SYSTEM = """You write scripts for {show}, a {cadence} podcast that reads the Deepgram developer changelog back to developers. Text-to-speech voices perform every word, so you write for the ear.
 
 The show's full format spec follows, then the cast, then a finished example episode. The spec is authoritative. Follow its editorial rule, segment rules, segment announcements, handoff rules, and pronunciation guidance exactly.
 
@@ -126,7 +130,7 @@ NOTES:
 - [Label](https://url)
 """
 
-USER = """Write the episode released Tuesday {release} ({release_spoken}).
+USER = """Write the episode released {release_day} {release} ({release_spoken}).
 
 It covers changelog entries dated {start} through {end}. Here they are, each with its own changelog URL:
 
@@ -139,8 +143,22 @@ def spoken_day(d: date) -> str:
     return f'{d:%B} {ORDINAL[d.day]}'
 
 
+PERIOD_OF = {'weekly': 'week of', 'biweekly': 'weeks of', 'monthly': 'month of'}
+
+
+def spoken_window(start: date, end: date) -> str:
+    """'the week of September thirteenth to September nineteenth', or 'September' for a month."""
+    if CADENCE.name == 'monthly':
+        return f'{start:%B}'
+    lead = 'the week of' if CADENCE.name == 'weekly' else 'the two weeks of'
+    return f'{lead} {spoken_day(start)} to {spoken_day(end)}'
+
+
 def gather(release: date) -> tuple[date, date, list[dict]]:
-    start, end = release - timedelta(days=9), release - timedelta(days=3)
+    window = CADENCE.window_for_release(release)
+    if window is None:
+        sys.exit(f'{release} is not a release date for a {CADENCE.adjective} show released on {CADENCE.day_name}s')
+    start, end = window
     entries = []
     for day, body, url in load_entries(refresh=False):
         if start <= day <= end:
@@ -232,7 +250,7 @@ def assemble(raw: str, release: date, start: date, end: date, entries: list[dict
     # The intro is canned, so when a desk voice opens the show the anchor still hands off to it.
     intro_handoff = ''
     if first:
-        what = "this week's launches" if heads[0] == 'Launches' else f'the {SPOKEN_SEGMENT[heads[0]]} updates'
+        what = LAUNCHES[CADENCE.name] if heads[0] == 'Launches' else f'the {SPOKEN_SEGMENT[heads[0]]} updates'
         intro_handoff = f" {first['name']} kicks us off with {what}."
     last_voice = cast['segments'].get(last, cast['anchor'])['name']
     promo = PROMO_START <= release <= PROMO_END
@@ -243,18 +261,18 @@ def assemble(raw: str, release: date, start: date, end: date, entries: list[dict
         canned['Credits and pricing'] = canned['Credits and pricing'][:1] + [PROMO_NOTE] + canned['Credits and pricing'][1:]
     canned_md = '\n\n'.join(f'**{k}**\n\n' + '\n'.join(f'- [{a}]({b})' for a, b in v) for k, v in canned.items())
     source = '\n'.join(f"- {it['date']}: {it['title']} ({it['url']})" for it in entries)
-    return f"""# {SHOW['name']}, week of {start.isoformat()} to {end.isoformat()}
+    return f"""# {SHOW['name']}, {PERIOD_OF[CADENCE.name]} {start.isoformat()} to {end.isoformat()}
 
 **Summary:** {summary}
 
-Written by `scripts/write_episode.py` ({MODEL}). Releases Tuesday {release.isoformat()}. Everything
+Written by `scripts/write_episode.py` ({MODEL}). Releases {CADENCE.day_name} {release.isoformat()}. Everything
 under a segment heading is spoken. Show notes are at the bottom.
 
 ---
 
 ## Intro
 
-Hello, this is {cast['anchor']['name']} with {SHOW['name']}. Changelogs from the week of {spoken_day(start)} to {spoken_day(end)}. Links to every docs page mentioned are in the show notes.{intro_handoff}
+Hello, this is {cast['anchor']['name']} with {SHOW['name']}. Changelogs from {spoken_window(start, end)}. Links to every docs page mentioned are in the show notes.{intro_handoff}
 
 {segs}
 
@@ -284,6 +302,7 @@ def build_prompts(release: date, start: date, end: date, entries: list[dict], ca
     """The exact system and user prompts for one episode. Shared with estimate_writer_cost.py."""
     system = SYSTEM.format(
         show=SHOW['name'],
+        cadence=CADENCE.adjective,
         spec=(ROOT / 'docs' / 'show-format.md').read_text(),
         cast=json.dumps(cast, indent=2),
         example=(ROOT / 'docs' / 'example-episode.md').read_text().split("## Writer's notes")[0],
@@ -293,7 +312,7 @@ def build_prompts(release: date, start: date, end: date, entries: list[dict], ca
                              for it in entries)
     launch_block = ('Treat an entry as a launch only if it introduces a new model, product, or API, or announces '
                     'general availability of one. Regional endpoints and self-hosted releases are quick hits.')
-    user = USER.format(release=release.isoformat(), release_spoken=spoken_day(release),
+    user = USER.format(release=release.isoformat(), release_spoken=spoken_day(release), release_day=CADENCE.day_name,
                        start=start.isoformat(), end=end.isoformat(), entries=entry_text,
                        launch_block=launch_block)
     return system, user
@@ -301,12 +320,10 @@ def build_prompts(release: date, start: date, end: date, entries: list[dict], ca
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument('release', help='Tuesday release date, YYYY-MM-DD')
+    ap.add_argument('release', help='release date, YYYY-MM-DD')
     ap.add_argument('--force', action='store_true', help='overwrite an existing script.md')
     args = ap.parse_args()
     release = date.fromisoformat(args.release)
-    if release.weekday() != 1:
-        sys.exit(f'{release} is not a Tuesday')
     out = EPISODES / release.isoformat() / 'script.md'
     if out.exists() and not args.force:
         sys.exit(f'{out} exists; pass --force to rewrite it')

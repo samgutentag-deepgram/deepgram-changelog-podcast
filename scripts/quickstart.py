@@ -90,6 +90,29 @@ def set_aside_example(show_name: str) -> None:
     say(f'Moved the Deepgram example episode to {target.relative_to(ROOT)} so it can\'t collide with yours.')
 
 
+def offer_cadence(show: dict) -> bool:
+    """Before the first render, say what cadence the feed's history suggests and offer to switch
+    show.json to it. Returns True if show.json changed, so the plan gets rebuilt."""
+    try:
+        rec = json.loads((ROOT / 'research' / 'cadence.json').read_text())
+    except (OSError, ValueError):
+        return False
+    current = show.get('cadence', 'weekly')
+    say(f"Cadence: {rec['reason']}")
+    if rec['cadence'] == current:
+        say(f'{current.capitalize()} fits, and that is what show.json has.')
+        return False
+    answer = input(f"Recommended: {rec['cadence']}. show.json says {current}. Switch to {rec['cadence']}? [y/N] ")
+    if answer.strip().lower() not in ('y', 'yes'):
+        return False
+    path = ROOT / 'show.json'
+    data = json.loads(path.read_text())
+    data['cadence'] = rec['cadence']
+    path.write_text(json.dumps(data, indent=2) + '\n')
+    say(f"show.json now says {rec['cadence']}. Re-planning.")
+    return True
+
+
 def run(*args: str) -> None:
     # stdin closed so nothing a step runs can swallow the answer to the "how many more" prompt.
     r = subprocess.run([PY, *args], cwd=ROOT, stdin=subprocess.DEVNULL)
@@ -129,11 +152,24 @@ def measured() -> tuple[float, float, int]:
     return sum(costs) / len(costs), (sum(seconds) / len(seconds) if seconds else DEFAULT_SECONDS), len(costs)
 
 
+def in_use(port: int) -> bool:
+    # Check IPv6 too: a server bound to [::] answers on localhost in the browser but not on
+    # 127.0.0.1, and sharing its port sends the browser to the wrong site.
+    for family, host in ((socket.AF_INET, '127.0.0.1'), (socket.AF_INET6, '::1')):
+        try:
+            with socket.socket(family) as s:
+                s.settimeout(0.3)
+                if s.connect_ex((host, port)) == 0:
+                    return True
+        except OSError:
+            continue
+    return False
+
+
 def free_port(start: int) -> int:
     for port in range(start, start + 20):
-        with socket.socket() as s:
-            if s.connect_ex(('127.0.0.1', port)) != 0:
-                return port
+        if not in_use(port):
+            return port
     raise SystemExit(f'No free port between {start} and {start + 19}; pass --port.')
 
 
@@ -156,7 +192,7 @@ def ask_how_many(waiting: list[str]) -> list[str]:
     where = (f'your {basis} episode{"s" if basis != 1 else ""} so far' if basis
              else 'the Deepgram show\'s average')
     say()
-    say(f'{n} more week{"s have" if n != 1 else " has"} changelog entries and no episode yet.')
+    say(f'{n} more episode{"s" if n != 1 else ""} worth of changelog {"have" if n != 1 else "has"} no audio yet.')
     say(f'At about ${usd:.2f} an episode ({where}, Flux TTS plus Claude), all of them is about '
         f'${usd * n:.2f} and {max(1, round(total_min))} minutes, {JOBS} at a time.')
     while True:
@@ -190,17 +226,20 @@ def main() -> None:
 
     say('Reading the changelog (free, no API calls)...')
     run(str(SCRIPTS / 'backfill_plan.py'), '--refresh')
+    if not args.more and not any(published(w['id']) for w in plan()):
+        if offer_cadence(SHOW):
+            run(str(SCRIPTS / 'backfill_plan.py'))
     weeks = sorted((w['id'] for w in plan()), reverse=True)
     if not weeks:
-        raise SystemExit('The feed has no dated entries up to last Saturday, so there is nothing to render yet.')
+        raise SystemExit('The feed has no dated entries in a finished window yet, so there is nothing to render.')
     waiting = [w for w in weeks if not published(w)]
-    say(f'{len(weeks)} week{"s" if len(weeks) != 1 else ""} with entries, {len(weeks) - len(waiting)} already rendered.')
+    say(f'{len(weeks)} episode{"s" if len(weeks) != 1 else ""} worth of changelog, {len(weeks) - len(waiting)} already rendered.')
 
     first = None
     if not args.more and waiting and len(waiting) == len(weeks):
         first = waiting.pop(0)
-        say(f'Rendering the newest week, {first}, as your first episode. A quiet week takes about 5 '
-            f'minutes and 20 cents; a busy one can take 20 minutes and about a dollar.')
+        say(f'Rendering the newest one, {first}, as your first episode. A quiet stretch of changelog '
+            f'takes about 5 minutes and 20 cents; a busy one can take 20 minutes and about a dollar.')
         run(str(SCRIPTS / 'produce.py'), first)
     # Always redraw the cover: the repo ships Deepgram's, and a renamed show needs its own.
     run(str(SCRIPTS / 'make_art.py'))
@@ -212,7 +251,7 @@ def main() -> None:
     landing = f'{base}/e/{first}' if first else f'{base}/back-catalog'
     say()
     say(f'Your site is up: {base}')
-    say(f'  Back catalog, every week and what it costs: {base}/back-catalog')
+    say(f'  Back catalog, every episode and what it costs: {base}/back-catalog')
     if not args.no_open:
         webbrowser.open(landing)
 

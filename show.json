@@ -1,13 +1,19 @@
 {
   "_comment": "Who this show is. Every script and page reads its name, links, and art text from here, so a fork edits this file instead of hunting for strings.",
   "name": "The Deepgram Changelog",
-  "wordmark": ["The Deepgram", "Changelog"],
+  "wordmark": [
+    "The Deepgram",
+    "Changelog"
+  ],
   "description": "The Deepgram developer changelog, read back to you every Tuesday. Breaking changes first, then launches, then everything else that shipped the week before, with a link to the docs for every item. Voiced start to finish by Deepgram Flux TTS.",
   "author": "Deepgram DevRel",
   "owner_email": "devrel@deepgram.com",
   "site_url": "https://dg-devrel-deepgram-changelog.fly.dev",
   "changelog_url": "https://developers.deepgram.com/changelog",
   "feed_url": "https://developers.deepgram.com/changelog.rss",
+  "_cadence": "How often an episode comes out: weekly (Sunday to Saturday), biweekly, or monthly. release_day is the weekday it publishes, at least two days after its window ends. python3 scripts/cadence.py recommends one for your feed.",
+  "cadence": "weekly",
+  "release_day": "tuesday",
   "_attribution": "A 'Voiced with Deepgram Flux TTS' credit in the site footer and the feed description. Set it to false to remove both.",
   "attribution": true
 }

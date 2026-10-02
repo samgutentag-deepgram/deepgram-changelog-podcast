@@ -25,10 +25,12 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from show import SHOW  # noqa: E402
+from cadence import CADENCE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -243,7 +245,7 @@ def parse_show_notes(script: str) -> dict[str, list[dict]]:
 
 
 def write_site_data(ep: Path, script_md: str, rows, chapters, duration, chars, usd, args) -> None:
-    head = re.search(r'week of (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})', script_md)
+    head = re.search(r'(?:week|weeks|month) of (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})', script_md)
     summary = re.search(r'^\*\*Summary:\*\*\s*(.+)$', script_md, re.M)
     if not head:
         sys.exit('script.md title must contain "week of YYYY-MM-DD to YYYY-MM-DD"')
@@ -261,7 +263,7 @@ def write_site_data(ep: Path, script_md: str, rows, chapters, duration, chars, u
                             'links': links})
     episode = {
         'id': ep.name, 'release_date': ep.name[:10], 'window': {'start': start, 'end': end},
-        'title': f'Week of {human_range(start, end)}',
+        'title': CADENCE.title(date.fromisoformat(start), date.fromisoformat(end)),
         'summary': summary.group(1).strip() if summary else '',
         'host': args.host, 'voice_id': args.voice, 'duration_seconds': round(duration, 1),
         'cast': sorted({r['speaker_key'] for r in rows} - {args.host}),
@@ -271,7 +273,8 @@ def write_site_data(ep: Path, script_md: str, rows, chapters, duration, chars, u
         'cost': {
             'characters': chars, 'usd': round(usd, 5), 'rate_usd_per_1k': RATE_USD_PER_1K,
             'plan': 'payg', 'credit_usd': 200.0, 'episodes_per_credit': int(200 / usd),
-            'episodes_per_year': 52, 'year_usd': round(usd * 52, 2),
+            'episodes_per_year': CADENCE.per_year, 'year_usd': round(usd * CADENCE.per_year, 2),
+            'cadence': CADENCE.name,
             # Writing the script with Claude, when writer.json recorded it. Kept separate from
             # the Flux TTS figure, which is the one the outro says out loud.
             'writer_usd': (json.loads((ep / 'writer.json').read_text()).get('usd')

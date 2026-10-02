@@ -62,7 +62,7 @@ import { mmss, usd, count } from './format.js'
     var figures = [
       { cls: 'cost-figure-money', value: usd(c.usd, 4), label: 'of Deepgram Flux TTS' },
       { value: count(c.characters), label: 'characters of script' },
-      { value: usd(c.year_usd, 2), label: 'for a year of weekly episodes (' + c.episodes_per_year + ')' },
+      { value: usd(c.year_usd, 2), label: 'for a year of ' + (c.cadence || 'weekly') + ' episodes (' + c.episodes_per_year + ')' },
       { value: count(c.episodes_per_credit), label: 'episodes on the ' + usd(c.credit_usd, 0) + ' signup credit' }
     ]
     var grid = document.getElementById('cost-figures')
@@ -88,7 +88,8 @@ import { mmss, usd, count } from './format.js'
   function joinLine(ep) {
     var h = ep.hosts && ep.hosts.length ? ep.hosts : [ep.host]
     var names = h.length < 3 ? h.join(' and ') : h.slice(0, -1).join(', ') + ', and ' + h[h.length - 1]
-    return 'Join ' + names + ' as they cover the week: '
+    var period = { biweekly: 'two weeks', monthly: 'month' }[(ep.cost || {}).cadence] || 'week'
+    return 'Join ' + names + ' as they cover the ' + period + ': '
   }
 
   function render(ep, rows, chapters) {

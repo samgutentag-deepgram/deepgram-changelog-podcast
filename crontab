@@ -1,4 +1,5 @@
-# Weekly episode: 5am Pacific every Tuesday, covering the Sunday to Saturday that just ended.
-# supercronic reads CRON_TZ, so this stays 5am Pacific across daylight saving changes.
+# Every morning at 5am Pacific. weekly_run.py exits at once unless today is a release date for
+# show.json's cadence and release_day (by default, Tuesdays, covering the Sunday to Saturday that
+# just ended). supercronic reads CRON_TZ, so this stays 5am Pacific across daylight saving changes.
 CRON_TZ=America/Los_Angeles
-0 5 * * 2 cd /app && python scripts/weekly_run.py >> /data/logs/weekly.log 2>&1
+0 5 * * * cd /app && python scripts/weekly_run.py >> /data/logs/weekly.log 2>&1

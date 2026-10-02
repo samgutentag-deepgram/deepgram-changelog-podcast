@@ -25,6 +25,9 @@ import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cadence import CADENCE  # noqa: E402
+
 ROOT = Path(__file__).resolve().parent.parent
 SEGMENTS = [
     ('Breaking changes and action required', 'Breaking'), ('Launches', 'Launches'),
@@ -92,15 +95,15 @@ def published_row(ep_dir: Path, ep: dict, base: dict | None) -> dict:
     start, end = window.get('start'), window.get('end')
     release = ep.get('release_date') or ep_dir.name
     if not (start and end):
-        # Same Sunday-to-Saturday rule as the show: release Tuesday is nine days after Sunday.
+        # Same rule as the show: the window this release date publishes (cadence.py).
         try:
-            s = date.fromisoformat(release) - timedelta(days=9)
-            start, end = s.isoformat(), (s + timedelta(days=6)).isoformat()
+            window = CADENCE.window_for_release(date.fromisoformat(release))
         except ValueError:
-            start = end = None
+            window = None
+        start, end = (window[0].isoformat(), window[1].isoformat()) if window else (None, None)
     title = ep.get('title')
     if not title and start and end:
-        title = f'Week of {human_range(date.fromisoformat(start), date.fromisoformat(end))}'
+        title = CADENCE.title(date.fromisoformat(start), date.fromisoformat(end))
     chapters = (read_json(ep_dir / 'chapters.json') or {}).get('chapters') or []
     segs = {}
     for c in chapters:
@@ -150,6 +153,8 @@ def build(episodes_dir: Path, plan_path: Path) -> dict:
     return {
         'generated_at': datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         'segments': [{'name': name, 'short': short} for name, short in SEGMENTS],
+        'cadence': {'name': CADENCE.name, 'release_day': CADENCE.day_name, 'period': CADENCE.period,
+                    'describe': CADENCE.describe()},
         'totals': {
             'episodes': len(episodes),
             'published': len(published),

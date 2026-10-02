@@ -3,7 +3,7 @@
 Usage:
   python3 scripts/produce.py 2026-09-15                 one episode, by Tuesday release date
   python3 scripts/produce.py 2026-09-15 2026-09-08 --jobs 3   several, three at a time
-  python3 scripts/produce.py --weekly                   the week that just ended, plus a 4 week sweep (the cron job)
+  python3 scripts/produce.py --weekly                   the latest release, plus a sweep of the ones before (the cron job)
   python3 scripts/produce.py --weekly --dry-run         what the cron job would produce today, without producing it
   python3 scripts/produce.py --backfill 2026 --jobs 3   every planned week in a year not yet rendered
 
@@ -25,17 +25,18 @@ import subprocess
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import date, timedelta
+from datetime import date
 from pathlib import Path
 
 from show import SHOW
+from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS = ROOT / 'scripts'
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
 SITE_URL = SHOW['site_url']
 PY = sys.executable
-SWEEP_WEEKS = 4  # past weeks re-checked every Tuesday for entries that arrived late
+SWEEP = CADENCE.sweep  # past releases each scheduled run re-checks for entries that arrived late
 # The art step needs Pillow, which the rest of the pipeline does not. The container installs it
 # into the one interpreter; locally it can point at any Python that has it.
 ART_PY = os.environ.get('ART_PYTHON', PY)
@@ -87,12 +88,6 @@ def refresh_site() -> None:
     run(str(SCRIPTS / 'build_feed.py'), '--base', SITE_URL)
 
 
-def last_tuesday(today: date) -> date:
-    # The Tuesday on or before today. At 5am Pacific on a Tuesday that is today, which covers the
-    # Sunday to Saturday that just ended.
-    return today - timedelta(days=(today.weekday() - 1) % 7)
-
-
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument('release', nargs='*', help='one or more Tuesday release dates')
@@ -106,17 +101,16 @@ def main() -> None:
 
     # One clock read for the whole run, so a run that straddles midnight plans and picks the
     # same week.
-    latest = last_tuesday(date.today())
+    today = date.today()
     if args.weekly or args.backfill:
-        run(str(SCRIPTS / 'backfill_plan.py'), '--refresh',
-            '--through', (latest - timedelta(days=3)).isoformat())
+        run(str(SCRIPTS / 'backfill_plan.py'), '--refresh', '--through', CADENCE.latest_end(today).isoformat())
     if args.release:
         targets = list(args.release)
     elif args.weekly:
-        # The week that just ended, plus a sweep of the SWEEP_WEEKS before it. The sweep catches
+        # The latest release, plus a sweep of the SWEEP before it (about four weeks). The sweep catches
         # changelog entries that were posted or backdated into a past week after that week's own
         # Tuesday run, which would otherwise never get an episode.
-        window = [(latest - timedelta(weeks=i)).isoformat() for i in range(SWEEP_WEEKS + 1)]
+        window = [r.isoformat() for r in CADENCE.releases_through(today, SWEEP + 1)]
         planned = {p['id'] for p in json.loads((ROOT / 'research' / 'backfill-plan.json').read_text())}
         targets = []
         for rel in window:

@@ -19,6 +19,7 @@ from email.utils import format_datetime
 from pathlib import Path
 
 from show import ATTRIBUTION_TEXT, SHOW
+from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -37,7 +38,7 @@ def item(base: str, ep: dict, ep_dir: Path) -> str:
     notes = json.loads((ep_dir / 'chapters.json').read_text()).get('chapters', [])
     hosts = ep.get('hosts') or [ep.get('host', '')]
     names = ' and '.join(hosts) if len(hosts) < 3 else ', '.join(hosts[:-1]) + ', and ' + hosts[-1]
-    body = [f"<p>Join {html.escape(names)} as they cover the week: {html.escape(ep.get('summary', ''))}</p>"]
+    body = [f"<p>Join {html.escape(names)} as they cover the {CADENCE.period}: {html.escape(ep.get('summary', ''))}</p>"]
     for c in notes:
         if c.get('links'):
             body.append(f"<p><strong>{html.escape(c['title'])}</strong></p><ul>")

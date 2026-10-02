@@ -46,8 +46,10 @@ week of a bigger changelog costs more: a test on Claude Code's changelog came to
    python3 scripts/quickstart.py
    ```
 
-   It checks your setup, reads your feed (free), renders the newest week as your first episode,
-   draws the show cover and that episode's art, and opens the site in your browser. Then it tells
+   It checks your setup and reads your feed (free). Then it recommends a cadence from your feed's
+   history and offers to switch `show.json` to it (see [Cadence](#cadence)). After that it renders
+   the newest window as your first episode, draws the show cover and that episode's art, and opens
+   the site in your browser. Then it tells
    you how many more weeks have entries, what rendering them would cost, and asks how many you
    want. Nothing past the first episode costs anything until you answer.
 5. **Watch the back catalog.** [localhost:8010/back-catalog](http://localhost:8010/back-catalog)
@@ -57,6 +59,28 @@ week of a bigger changelog costs more: a test on Claude Code's changelog came to
 
 The first episode still sounds like Deepgram's show in a few places. See
 [What Else To Change](#what-else-to-change) for the outro, the segments, and the cast.
+
+### Cadence
+
+`show.json` sets how often an episode comes out and which day it publishes:
+
+- `"cadence"`: `weekly` (Sunday to Saturday), `biweekly` (two Sundays to Saturdays, on a fixed
+  grid), or `monthly` (the calendar month).
+- `"release_day"`: the weekday it publishes, the first one at least two days after its window ends.
+  The default, Tuesday, gives a weekly show a Monday buffer for late entries.
+
+An episode's id is its release date, so pick a cadence before you render much. To see what your feed
+supports, run `python3 scripts/cadence.py`. It reads the last 26 weeks and picks the fastest cadence
+where a typical episode has at least 2,500 characters of changelog (about two minutes of material)
+and no more than a fifth of episodes would be empty. Measured on 2026-10-01:
+
+| Feed | Typical week | Recommendation |
+| --- | --- | --- |
+| Deepgram | 3,300 characters | weekly |
+| Resend | 3,700 characters | weekly |
+| Cloudflare | 35,000 characters | weekly, with long episodes |
+| Linear | 1,500 characters | monthly |
+| Tailscale | 1,000 characters | monthly |
 
 ### Plan Your Show With Claude
 
@@ -192,15 +216,18 @@ can be re-synced. Anything specific to this show goes in `web/readback.css`.
 The show runs on one Fly machine in the `deepgram` org, at
 [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-changelog.fly.dev).
 
-At 5am Pacific every Tuesday, the machine's own cron (supercronic, reading `crontab`) runs
-`scripts/weekly_run.py`. That wraps `scripts/produce.py --weekly`, which refreshes the changelog and
-writes, renders, checks, and illustrates the episode for the Sunday to Saturday that just ended. It
+At 5am Pacific every morning, the machine's own cron (supercronic, reading `crontab`) runs
+`scripts/weekly_run.py`. It exits at once unless today is a release date for the show's cadence,
+which for this show means Tuesdays. On a release date it wraps `scripts/produce.py --weekly`, which
+refreshes the changelog and writes, renders, checks, and illustrates the episode for the Sunday to
+Saturday that just ended. It
 then rebuilds the feed and the back catalog on the volume, so there's nothing to deploy. A failed
 run retries up to three times, five minutes apart. Set `CHANGELOG_PUSHOVER_TOKEN` and
 `CHANGELOG_PUSHOVER_USER` (see `.env.sample`) to get a push for each retry and for the result.
 
-A week with no changelog entries gets no episode. Each run also re-checks the four weeks before it,
-so an entry that shows up late still gets an episode.
+A week with no changelog entries gets no episode. Each run also re-checks about four weeks of
+earlier releases (four weekly, two biweekly, or one monthly), so an entry that shows up late still
+gets an episode.
 
 Every run leaves a record on the volume at `/data/runs/<UTC stamp>/`: a timestamped `run.log`, the
 catalog before and after, the feed after, the new episode's `produce.json`, and a `summary.json`
@@ -217,6 +244,7 @@ To deploy your own:
    and rename `app` in `fly.toml`.
 2. **Set the keys.** `fly secrets set DEEPGRAM_API_KEY=... ANTHROPIC_API_KEY=...`
 3. **Pick your morning.** `crontab` runs at 5am Pacific. Change `CRON_TZ` if that isn't yours.
+   The day comes from `release_day` in `show.json`, so the crontab doesn't change with it.
 4. **Ship it.** `python3 scripts/backfill_plan.py --refresh`, then
    `python3 scripts/stage_site.py && fly deploy --remote-only --ha=false`.
 

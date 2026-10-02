@@ -1,6 +1,9 @@
-"""The Tuesday cron entry point: run produce.py --weekly and keep a capture bundle of the run.
+"""The cron entry point: on a release date, run produce.py --weekly and keep a capture bundle.
 
-Usage (crontab): python scripts/weekly_run.py
+Usage (crontab): python scripts/weekly_run.py [--force]
+
+Cron calls this every morning. On any day that isn't a release date for show.json's cadence and
+release_day, it exits at once without a bundle or an alert. --force runs it anyway.
 
 Every run gets its own directory, /data/runs/<UTC timestamp>/, holding:
   run.log               every line produce.py printed, each stamped with UTC time
@@ -28,12 +31,13 @@ import shutil
 import subprocess
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from alerts import notify
 
 from show import SHOW
+from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -73,6 +77,9 @@ def attempt(n: int, log) -> tuple[int, list[str]]:
 
 
 def main() -> int:
+    if '--force' not in sys.argv and CADENCE.window_for_release(date.today()) is None:
+        print(f'{date.today()}: not a release date ({CADENCE.adjective}, {CADENCE.day_name}s), nothing to do')
+        return 0
     run_dir = RUNS / datetime.now(timezone.utc).strftime('%Y-%m-%dT%H%M%SZ')
     run_dir.mkdir(parents=True, exist_ok=True)
     before = {p.name for p in EPISODES.iterdir() if (p / 'episode.mp3').exists()} if EPISODES.exists() else set()

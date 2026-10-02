@@ -34,6 +34,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from show import ATTRIBUTION_TEXT, SHOW
+from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = ROOT / 'episodes'
@@ -325,6 +326,8 @@ def _date_range(episode: dict) -> tuple[str, str]:
     except (KeyError, TypeError, ValueError):
         title = str(episode.get('title', '')).removeprefix('Week of ').strip()
         return (title or episode.get('release_date', '') or 'This week'), ''
+    if CADENCE.name == 'monthly':
+        return s.strftime('%B'), str(s.year)
     mon = lambda x: x.strftime('%b')
     if s.year != e.year:
         return f'{mon(s)} {s.day}, {s.year} to {mon(e)} {e.day}', str(e.year)

@@ -107,6 +107,8 @@ import { usd, count } from './format.js'
           : 'estimated once one episode is published' }
     ]
     renderMore(t, planned)
+    var cad = d.cadence && document.getElementById('bc-cadence')
+    if (cad && d.cadence.describe) cad.textContent = d.cadence.describe.charAt(0).toUpperCase() + d.cadence.describe.slice(1) + '.'
     figures.innerHTML = ''
     cells.forEach(function (f) {
       var c = el('div', 'cost-figure' + (f.cls ? ' ' + f.cls : ''))
@@ -124,8 +126,8 @@ import { usd, count } from './format.js'
     if (!box || !local || !planned) { if (box) box.hidden = true; return }
     var each = t.avg_cost_usd != null && t.published
       ? t.avg_cost_usd + (t.writer_tracked ? t.writer_usd_published / t.writer_tracked : 0) : null
-    document.getElementById('bc-more-text').textContent = count(planned) + ' week'
-      + (planned === 1 ? ' has' : 's have') + ' changelog entries and no episode yet.'
+    document.getElementById('bc-more-text').textContent = count(planned) + ' episode'
+      + (planned === 1 ? '' : 's') + ' worth of changelog ' + (planned === 1 ? 'has' : 'have') + ' no audio yet.'
       + (each != null ? ' At this show\u2019s average of ' + usd(each, 2) + ' an episode, Flux TTS plus Claude, '
         + 'rendering all of them costs about ' + usd(each * planned, 2) + '.' : '')
     box.hidden = false

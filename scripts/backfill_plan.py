@@ -1,6 +1,7 @@
-"""Plan the backfill: one episode per Sunday-to-Saturday week that has changelog entries, with a
-draft guess at which segments each episode would have. Writes research/backfill-plan.json and
-research/backfill-review.html.
+"""Plan the backfill: one episode per window (a week, two weeks, or a month, per show.json's
+"cadence") that has changelog entries, with a draft guess at which segments each episode would
+have. Writes research/backfill-plan.json, research/backfill-review.html, and research/cadence.json,
+which recommends a cadence from the feed's recent history.
 
 Usage: python3 scripts/backfill_plan.py [--through YYYY-MM-DD] [--refresh]
 
@@ -24,6 +25,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 import changelog_source
+from cadence import CADENCE, recommend
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
@@ -118,20 +120,23 @@ def human_range(a: date, b: date) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument('--through', default=last_saturday().isoformat(), help='last Saturday to include')
+    ap.add_argument('--through', default=CADENCE.latest_end().isoformat(),
+                    help='last day to include (default: the end of the most recent finished window)')
     ap.add_argument('--refresh', action='store_true')
     args = ap.parse_args()
     through = date.fromisoformat(args.through)
 
     weeks: dict[date, list[dict]] = {}
-    for day, body, _url in load_entries(args.refresh):
+    entries = load_entries(args.refresh)
+    for day, body, _url in entries:
         if day <= through:
-            weeks.setdefault(sunday_of(day), []).extend(items(day, body))
+            weeks.setdefault(CADENCE.window_of(day)[0], []).extend(items(day, body))
 
     published = {p.name for p in EPISODES.iterdir() if (p / 'episode.mp3').exists()}
     plan = []
     for start in sorted(weeks, reverse=True):
-        end, release = start + timedelta(days=6), start + timedelta(days=9)
+        end = CADENCE.window_of(start)[1]
+        release = CADENCE.release_for(end)
         segs: dict[str, list[str]] = {s: [] for s in SEGMENTS}
         for it in weeks[start]:
             seg = segment_for(it, set())
@@ -148,7 +153,7 @@ def main() -> None:
             aired = json.loads(real.read_text())['chapters']
             segs = {s: [f'aired: {s}'] for s in SEGMENTS if any(c['title'] == s for c in aired)}
         plan.append({
-            'id': release.isoformat(), 'title': f'Week of {human_range(start, end)}',
+            'id': release.isoformat(), 'title': CADENCE.title(start, end),
             'start': start.isoformat(), 'end': end.isoformat(), 'release': release.isoformat(),
             'entries': len(weeks[start]), 'published': release.isoformat() in published,
             'segments': {s: v for s, v in segs.items() if v},
@@ -157,8 +162,15 @@ def main() -> None:
     out = ROOT / 'research'
     (out / 'backfill-plan.json').write_text(json.dumps(plan, indent=2) + '\n')
     write_html(plan, out / 'backfill-review.html', through)
-    print(f'{len(plan)} episodes, {sum(p["published"] for p in plan)} already published. '
-          f'Wrote research/backfill-plan.json and research/backfill-review.html')
+    rec = recommend(entries, CADENCE.release_day)
+    rec['current'] = CADENCE.name
+    (out / 'cadence.json').write_text(json.dumps(rec, indent=2) + '\n')
+    print(f'{len(plan)} episodes ({CADENCE.adjective}, released {CADENCE.day_name}s), '
+          f'{sum(p["published"] for p in plan)} already published. '
+          f'Wrote research/backfill-plan.json, backfill-review.html, and cadence.json')
+    if rec['cadence'] != CADENCE.name:
+        print(f"Recommended cadence: {rec['cadence']} (show.json says {CADENCE.name}). "
+              "python3 scripts/cadence.py explains why.")
 
 
 def write_html(plan: list[dict], path: Path, through: date) -> None:
