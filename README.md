@@ -35,9 +35,13 @@ week of a bigger changelog costs more: a test on Claude Code's changelog came to
    git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
    cd deepgram-changelog-podcast
    brew install ffmpeg                        # or your package manager's ffmpeg
-   python3 -m pip install anthropic pillow    # in a venv, or add --break-system-packages
+   python3 -m pip install anthropic pillow    # see the note below if pip refuses
    cp .env.sample .env                        # then add DEEPGRAM_API_KEY and ANTHROPIC_API_KEY
    ```
+
+   If pip says the environment is "externally managed" (Homebrew's Python), add
+   `--break-system-packages` or use a venv. Older pips, like the one in macOS's built-in Python 3.9,
+   don't know that flag and don't need it; add `--user` if they ask for permissions instead.
 
 3. **Name your show.** Open `show.json` and set `name`, `wordmark` (the two lines drawn on the
    art), `description`, `author`, `owner_email`, `changelog_url`, and `feed_url`. Leave `site_url`
