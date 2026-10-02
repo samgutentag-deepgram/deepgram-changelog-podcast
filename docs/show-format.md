@@ -114,7 +114,10 @@ domain. Every link goes in the show notes, in segment order.
 Only the dates change.
 
 > Hello, this is {host} with The Deepgram Changelog. Changelogs from the week of {start}
-> to {end}. Links to every docs page mentioned are in the show notes.
+> to {end}, {year}. Links to every docs page mentioned are in the show notes.
+
+The year is always said ("September nineteenth, twenty twenty six"), and a monthly show says the
+month and year ("July twenty twenty six"), so an episode heard years later still says when it was.
 
 ## Canned outro
 

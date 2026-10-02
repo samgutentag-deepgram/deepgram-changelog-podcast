@@ -326,7 +326,7 @@ def _date_range(episode: dict) -> tuple[str, str]:
         title = str(episode.get('title', '')).removeprefix('Week of ').strip()
         return (title or episode.get('release_date', '') or 'This week'), ''
     if CADENCE.name == 'monthly':
-        return s.strftime('%B'), str(s.year)
+        return f"{s:%B} {s.year}", ''  # 'September 2026' on one line
     mon = lambda x: x.strftime('%b')
     if s.year != e.year:
         return f'{mon(s)} {s.day}, {s.year} to {mon(e)} {e.day}', str(e.year)

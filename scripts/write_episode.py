@@ -179,12 +179,33 @@ def spoken_day(d: date) -> str:
 PERIOD_OF = {'weekly': 'week of', 'biweekly': 'weeks of', 'monthly': 'month of'}
 
 
+NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+                'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen',
+                'nineteen']
+TENS_WORDS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+
+
+def spoken_year(year: int) -> str:
+    """2026 is 'twenty twenty six', 2005 is 'two thousand five', the way a host says it."""
+    def under_100(n: int) -> str:
+        return NUMBER_WORDS[n] if n < 20 else TENS_WORDS[n // 10] + ('' if n % 10 == 0 else ' ' + NUMBER_WORDS[n % 10])
+    century, rest = divmod(year, 100)
+    if 2000 <= year < 2010:
+        return 'two thousand' + (f' {NUMBER_WORDS[rest]}' if rest else '')
+    return f'{under_100(century)} ' + (under_100(rest) if rest >= 10 else f'oh {NUMBER_WORDS[rest]}' if rest else 'hundred')
+
+
 def spoken_window(start: date, end: date) -> str:
-    """'the week of September thirteenth to September nineteenth', or 'September' for a month."""
+    """'the week of September thirteenth to September nineteenth, twenty twenty six', or
+    'September twenty twenty six' for a month. Always with the year, so an episode heard out of
+    order, or years later in the back catalog, still says when it was."""
     if CADENCE.name == 'monthly':
-        return f'{start:%B}'
+        return f'{start:%B} {spoken_year(start.year)}'
     lead = 'the week of' if CADENCE.name == 'weekly' else 'the two weeks of'
-    return f'{lead} {spoken_day(start)} to {spoken_day(end)}'
+    if start.year != end.year:
+        return (f'{lead} {spoken_day(start)}, {spoken_year(start.year)}, to '
+                f'{spoken_day(end)}, {spoken_year(end.year)}')
+    return f'{lead} {spoken_day(start)} to {spoken_day(end)}, {spoken_year(end.year)}'
 
 
 def gather(release: date) -> tuple[date, date, list[dict]]:
