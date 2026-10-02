@@ -15,3 +15,4 @@ research/backfill-review.html
 research/cadence.json
 .venv/
 !web/media/*.mp4
+research/timings.json

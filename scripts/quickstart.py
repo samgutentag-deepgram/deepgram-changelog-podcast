@@ -208,6 +208,70 @@ def ask_how_many(waiting: list[str]) -> list[str]:
         say('  Type a number like 5, or "all", or just press Enter.')
 
 
+def clock(seconds: float) -> str:
+    seconds = round(seconds)
+    if seconds < 60:
+        return f'{seconds} s'
+    return f'{seconds // 60} min {seconds % 60:02d} s'
+
+
+def episode_usage(ep_id: str) -> dict:
+    """What one episode took: seconds per step, writer tokens and cost, characters voiced."""
+    d = EPISODES / ep_id
+    def read(name: str) -> dict:
+        try:
+            return json.loads((d / name).read_text())
+        except (OSError, ValueError):
+            return {}
+    produce, writer, episode = read('produce.json'), read('writer.json'), read('episode.json')
+    calls = writer.get('calls') or []
+    cost = episode.get('cost') or {}
+    return {
+        'id': ep_id, 'seconds': produce.get('seconds'), 'timings': produce.get('timings') or {},
+        'writer_calls': len(calls),
+        'input_tokens': sum((c.get('input_tokens') or 0) + (c.get('cache_write_tokens') or 0)
+                            + (c.get('cache_read_tokens') or 0) for c in calls),
+        'output_tokens': sum(c.get('output_tokens') or 0 for c in calls),
+        'writer_usd': writer.get('usd'), 'characters': cost.get('characters'), 'tts_usd': cost.get('usd'),
+        'duration_seconds': episode.get('duration_seconds'),
+    }
+
+
+def report(phases: dict[str, float], episodes: list[str]) -> None:
+    """Print how long each part took and what it used, and keep it in research/timings.json so a
+    post or a video can quote real numbers."""
+    used = [episode_usage(e) for e in episodes]
+    say()
+    say('How long it took, and what it used:')
+    for name, secs in phases.items():
+        say(f'  {name:<28} {clock(secs)}')
+    for u in used:
+        t = u['timings']
+        say(f"  Episode {u['id']} ({clock(u['duration_seconds'] or 0)} of audio):")
+        if 'write' in t:
+            say(f"    {'Write (Claude)':<26} {clock(t['write'])}   {u['input_tokens']:,} input + "
+                f"{u['output_tokens']:,} output tokens, ${u['writer_usd'] or 0:.2f}")
+        if 'voice' in t:
+            say(f"    {'Voice (Flux TTS)':<26} {clock(t['voice'])}   {u['characters'] or 0:,} characters, "
+                f"${u['tts_usd'] or 0:.2f}")
+        if 'check' in t:
+            say(f"    {'Check (Deepgram STT)':<26} {clock(t['check'])}")
+        if 'assemble' in t or 'art' in t:
+            say(f"    {'Assemble and art':<26} {clock(t.get('assemble', 0) + t.get('art', 0))}")
+    total = sum(phases.values()) + sum(u['seconds'] or 0 for u in used)
+    label = 'Total' if phases else 'Total, added up across episodes'
+    say(f"  {label:<28} {clock(total)}")
+    path = ROOT / 'research' / 'timings.json'
+    try:
+        runs = json.loads(path.read_text())
+    except (OSError, ValueError):
+        runs = []
+    runs.append({'at': time.strftime('%Y-%m-%dT%H:%M:%S'), 'phases': {k: round(v, 1) for k, v in phases.items()},
+                 'episodes': used, 'total_seconds': round(total)})
+    path.write_text(json.dumps(runs, indent=2) + '\n')
+    say(f'  (kept in {path.relative_to(ROOT)})')
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
     ap.add_argument('--more', action='store_true', help='skip the first episode and go to the offer')
@@ -219,13 +283,18 @@ def main() -> None:
     sys.path.insert(0, str(SCRIPTS))
     from show import SHOW  # after load_env, so SITE_URL from .env counts
 
+    phases: dict[str, float] = {}
+    t = time.time()
     check_setup()
+    phases['Setup check'] = time.time() - t
     feed = os.environ.get('CHANGELOG_FEED_URL') or SHOW['feed_url']
     say(f"{SHOW['name']}, from {feed}")
     set_aside_example(SHOW['name'])
 
     say('Reading the changelog (free, no API calls)...')
+    t = time.time()
     run(str(SCRIPTS / 'backfill_plan.py'), '--refresh')
+    phases['Reading the feed (free)'] = time.time() - t
     if not args.more and not any(published(w['id']) for w in plan()):
         if offer_cadence(SHOW):
             run(str(SCRIPTS / 'backfill_plan.py'))
@@ -242,8 +311,10 @@ def main() -> None:
             f'takes about 5 minutes and 20 cents; a busy one can take 20 minutes and about a dollar.')
         run(str(SCRIPTS / 'produce.py'), first)
     # Always redraw the cover: the repo ships Deepgram's, and a renamed show needs its own.
+    t = time.time()
     run(str(SCRIPTS / 'make_art.py'))
     run(str(SCRIPTS / 'build_catalog.py'))
+    phases['Cover and catalog'] = time.time() - t
 
     port = free_port(args.port)
     server = serve(port)
@@ -254,12 +325,17 @@ def main() -> None:
     say(f'  Back catalog, every episode and what it costs: {base}/back-catalog')
     if not args.no_open:
         webbrowser.open(landing)
+    if first:
+        report(phases, [first])
 
     try:
         pick = ask_how_many(waiting) if waiting else []
         if pick:
             say(f'Open {base}/back-catalog to watch them land.')
+            t = time.time()
             run(str(SCRIPTS / 'produce.py'), *pick, '--jobs', str(JOBS))
+            say(f'{len(pick)} more rendered in {clock(time.time() - t)}, {JOBS} at a time.')
+            report({}, pick)
         say()
         say(f'The site is still up at {base}. Ctrl-C to stop it. Run this again with --more any time.')
         server.wait()

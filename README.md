@@ -99,6 +99,8 @@ answer (the show's name, the cadence, how many episodes to pay for). Ask them.
    - renders the newest episode, which takes 5 to 25 minutes and about 20 cents to a dollar
    - draws the show cover and the episode's art, then opens the site in your browser at
      `localhost:8010` (or the next free port, and it prints the address)
+   - prints how long each step took and what it used (Claude tokens, Flux TTS characters, and
+     the cost of each), and keeps a copy in `research/timings.json`
 
 6. **Look around.** The episode page has the player, chapters, the script following along, show
    notes, and what that episode cost. **Back catalog** in the header lists every episode your feed

@@ -65,19 +65,30 @@ def produce(release: str, rewrite: bool = False) -> dict:
     t0 = time.time()
     ep = EPISODES / release
     result = {'id': release, 'started': time.strftime('%Y-%m-%dT%H:%M:%S')}
+    # Wall-clock seconds per step, so a post can say how long each part takes.
+    timings: dict[str, float] = {}
+
+    def timed(step: str, *args: str, **kw) -> str:
+        t = time.time()
+        try:
+            return run(*args, **kw)
+        finally:
+            timings[step] = round(timings.get(step, 0) + time.time() - t, 1)
+
     if rewrite or not (ep / 'script.md').exists():
-        result['write'] = run(str(SCRIPTS / 'write_episode.py'), release, *(['--force'] if rewrite else []))
+        result['write'] = timed('write', str(SCRIPTS / 'write_episode.py'), release, *(['--force'] if rewrite else []))
     result['cost'] = run(str(SCRIPTS / 'fill_cost.py'), str(ep))
-    run(str(SCRIPTS / 'render_episode.py'), str(ep))
-    check = run(str(SCRIPTS / 'readback_check.py'), str(ep), '--retake', '3', '--json', str(ep / 'readback.json'))
+    timed('voice', str(SCRIPTS / 'render_episode.py'), str(ep))
+    check = timed('check', str(SCRIPTS / 'readback_check.py'), str(ep), '--retake', '3', '--json', str(ep / 'readback.json'))
     result['readback'] = check.splitlines()[-1] if check else ''
-    result['render'] = run(str(SCRIPTS / 'render_episode.py'), str(ep)).splitlines()[-1]
+    result['render'] = timed('assemble', str(SCRIPTS / 'render_episode.py'), str(ep)).splitlines()[-1]
     if (SCRIPTS / 'make_art.py').exists():
         try:
-            run(str(SCRIPTS / 'make_art.py'), str(ep), py=ART_PY)
+            timed('art', str(SCRIPTS / 'make_art.py'), str(ep), py=ART_PY)
         except RuntimeError as e:
             result['art_error'] = str(e)[-300:]
     result['seconds'] = round(time.time() - t0)
+    result['timings'] = timings
     (ep / 'produce.json').write_text(json.dumps(result, indent=2) + '\n')
     return result
 
