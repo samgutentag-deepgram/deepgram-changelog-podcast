@@ -183,7 +183,7 @@ Handoffs are one short line each way, so the show stays a show and not a relay:
 - An omitted segment's voice simply does not appear that week.
 
 Every voice renders at **expressivity 1** ("a little more" animated than the tuned default), picked by
-ear from the five-way comparison in `experiments/expressivity/`. It is a beta parameter, so
+ear from a five-way comparison of -2 through 2. It is a beta parameter, so
 re-check it when Flux ships a model update.
 
 Every voice gets its own `scripts/term_test.py` run, because pronunciation varies by voice.

@@ -111,6 +111,7 @@ def main() -> None:
         })
 
     out = ROOT / 'research'
+    out.mkdir(exist_ok=True)  # research/ holds only generated files, so a fresh clone has no folder
     (out / 'backfill-plan.json').write_text(json.dumps(plan, indent=2) + '\n')
     write_html(plan, out / 'backfill-review.html', through)
     rec = recommend(entries, CADENCE.release_day)

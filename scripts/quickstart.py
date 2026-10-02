@@ -276,6 +276,7 @@ def report(phases: dict[str, float], episodes: list[str]) -> None:
     label = 'Total' if phases else 'Total, added up across episodes'
     say(f"  {label:<28} {clock(total)}")
     path = ROOT / 'research' / 'timings.json'
+    path.parent.mkdir(exist_ok=True)
     try:
         runs = json.loads(path.read_text())
     except (OSError, ValueError):
