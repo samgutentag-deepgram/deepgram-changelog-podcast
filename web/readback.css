@@ -223,3 +223,11 @@ html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
   .site-nav { order: 3; width: 100%; margin: 0.2rem 0 0; overflow-x: auto; }
   .site-nav a { min-height: 2.75rem; }
 }
+
+/* Episode page: the episode's art beside its title. */
+.ep-head { display: flex; gap: 1.1rem; align-items: center; }
+.ep-head-text { min-width: 0; }
+.ep-head-art-link { flex: none; }
+.ep-head-art { display: block; width: 7.5rem; height: 7.5rem; border-radius: var(--dg-shape-panel);
+  border: 1px solid var(--dg-border); }
+@media (max-width: 640px) { .ep-head-art { width: 5rem; height: 5rem; } }

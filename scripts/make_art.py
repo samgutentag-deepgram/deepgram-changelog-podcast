@@ -35,6 +35,7 @@ from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from show import ATTRIBUTION_TEXT, SHOW
 from cadence import CADENCE
+from segments import PRODUCTS, SEGMENTS
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = ROOT / 'episodes'
@@ -54,8 +55,7 @@ SMALL, BIG = SHOW['wordmark']
 # A fork's art credits the voices; Deepgram's own show already says Deepgram in the wordmark.
 CREDIT = ATTRIBUTION_TEXT if SHOW['attribution'] and 'Deepgram' not in SMALL + BIG else ''
 
-RUNNING_ORDER = ['Intro', 'Breaking changes and action required', 'Launches', 'Quick hits',
-                 'Voice Agent', 'Speech-to-Text', 'Text-to-Speech', 'Developer experience', 'Outro']
+RUNNING_ORDER = ['Intro', *SEGMENTS, 'Outro']
 # Intro and Outro are canned and air every week, so they carry no information on the art.
 CANNED = {'Intro', 'Outro'}
 SHORT_NAMES = {'Breaking changes and action required': 'Breaking changes'}
@@ -286,9 +286,8 @@ def make_cover(out: Path = EPISODES / 'cover.png') -> Path:
     margin = 230
     bottom = wordmark(d, margin, 250, 200, 600, size - 2 * margin, 60)
 
-    rows = [('Breaking changes', 'Intro'), ('Launches', 'Launches'), ('Voice Agent', 'Voice Agent'),
-            ('Speech-to-Text', 'Speech-to-Text'), ('Text-to-Speech', 'Text-to-Speech'),
-            ('Developer experience', 'Developer experience')]
+    # Breaking changes in the anchor's voice, then launches, then each product segment.
+    rows = [('Breaking changes', 'Intro'), ('Launches', 'Launches')] + [(p['name'], p['name']) for p in PRODUCTS]
     top = bottom + 250
     end = size - 250
     pitch = (end - top) / (len(rows) - 1)

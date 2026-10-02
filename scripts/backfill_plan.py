@@ -26,34 +26,11 @@ from pathlib import Path
 
 import changelog_source
 from cadence import CADENCE, recommend
+from segments import SEGMENTS, SHORT, rollup_segments, segment_for  # noqa: F401  (others import these from here)
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
-SEGMENTS = ['Breaking changes and action required', 'Launches', 'Quick hits', 'Voice Agent',
-            'Speech-to-Text', 'Text-to-Speech', 'Developer experience']
-SHORT = {'Breaking changes and action required': 'Breaking', 'Launches': 'Launches',
-         'Quick hits': 'Quick hits', 'Voice Agent': 'Voice Agent', 'Speech-to-Text': 'STT',
-         'Text-to-Speech': 'TTS', 'Developer experience': 'DX'}
 COST_PER_EPISODE = 0.18  # episode one, 2026-09-22, multi-voice
-
-BREAKING = re.compile(
-    r'breaking change|action required|not backwards?[- ]compatible|deprecat|will be removed|'
-    r'has been removed|have been removed|\bremoves\b|\bremoved from\b|return(?:s)? (?:an? )?(?:HTTP )?4\d\d|'
-    r'sessions? (?:now )?close automatically|must be updated', re.I)
-NOT_BREAKING = re.compile(r'no breaking changes?|additive change|backward[- ]compatible\b(?! with previous)|'
-                          r'no existing fields are removed|remain as deprecated aliases', re.I)
-LAUNCH_HEAD = re.compile(r'\bintroducing\b|generally available|general availability|\blaunch', re.I)
-QUICK_HEAD = re.compile(r'self-hosted|nova-\d (?:model )?(?:update|improve|adds)|improved models|new models|'
-                        r'language|numerals|profanity|endpoint now generally available|concurrency|pricing|'
-                        r'now available$|\bmodels? support\b|llm models?|model updates', re.I)
-VOICE_AGENT = re.compile(r'voice agent|\bagent\b|\bllm\b|think|updatelisten|update ?listen|injectagent|'
-                         r'function call|claude|gemini|openai|nvidia|cartesia', re.I)
-STT = re.compile(r'\bnova\b|nova-\d|\bflux\b(?! tts)|diariz|redact|entit|transcri|speech-to-text|keyterm|'
-                 r'language detection|topic|summar|sentiment|intelligence|smart format|\bstt\b', re.I)
-TTS = re.compile(r'\baura\b|aura-\d|\btts\b|text-to-speech|\bspeak\b|voice controls|expressivity', re.I)
-ROLLUP = re.compile(r'sdk releases|sdk support|\bcli\b|@deepgram/react', re.I)
-DX = re.compile(r'\bsdk\b|\bcli\b|react|docs?\b|documentation|correction|saga|\bmcp\b|playground|console|'
-                r'api key|token|developer', re.I)
 
 
 def load_entries(refresh: bool) -> list[tuple[date, str, str]]:
@@ -74,30 +51,6 @@ def items(day: date, body: str) -> list[dict]:
         return [{'date': day.isoformat(), 'title': title, 'body': body.strip()}]
     return [{'date': day.isoformat(), 'title': p.partition('\n')[0].strip(), 'body': p.partition('\n')[2]}
             for p in parts]
-
-
-def segment_for(item: dict, launches_by_week: set[str]) -> str:
-    head, body = item['title'], item['body']
-    text = head + '\n' + body
-    is_correction = head.lower().startswith('correction')
-    if not is_correction:
-        hits = [s for s in re.split(r'(?<=[.!?\n])\s+', text) if BREAKING.search(s) and not NOT_BREAKING.search(s)]
-        if hits:
-            return SEGMENTS[0]
-    if not is_correction and 'self-hosted' not in head.lower() and 'endpoint' not in head.lower():
-        if LAUNCH_HEAD.search(head) or head in launches_by_week:
-            return SEGMENTS[1]
-    if QUICK_HEAD.search(head) and not re.search(r'\bsdk\b|\bcli\b', head, re.I):
-        return SEGMENTS[2]
-    for seg, rx in ((SEGMENTS[3], VOICE_AGENT), (SEGMENTS[4], STT), (SEGMENTS[5], TTS)):
-        if rx.search(head):
-            return seg
-    if DX.search(head):
-        return SEGMENTS[6]
-    for seg, rx in ((SEGMENTS[3], VOICE_AGENT), (SEGMENTS[4], STT), (SEGMENTS[5], TTS), (SEGMENTS[6], DX)):
-        if rx.search(body):
-            return seg
-    return SEGMENTS[2]
 
 
 def last_saturday(today: date | None = None) -> date:
@@ -143,10 +96,8 @@ def main() -> None:
             segs[seg].append(f"{it['date']}: {it['title']}")
             # Roll-up entries (SDK and CLI releases) carry several products at once, and the show
             # splits them across segments, so they also tick the product segments they discuss.
-            if ROLLUP.search(it['title']):
-                for s, rx in ((SEGMENTS[3], VOICE_AGENT), (SEGMENTS[4], STT), (SEGMENTS[5], TTS)):
-                    if s != seg and len(rx.findall(it['body'])) >= 2:
-                        segs[s].append(f"{it['date']}: {it['title']} (part)")
+            for extra in rollup_segments(it, seg):
+                segs[extra].append(f"{it['date']}: {it['title']} (part)")
         real = EPISODES / release.isoformat() / 'chapters.json'
         if real.exists():
             # A published episode shows what actually aired, not the guess.

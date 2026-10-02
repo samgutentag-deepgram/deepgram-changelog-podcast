@@ -28,7 +28,26 @@ You can have your own show running on your laptop in under half an hour. Deepgra
 about 20 cents an episode, all in. A busy stretch of a bigger changelog costs more: a test on Claude
 Code's changelog came to 95 cents for a 10-minute episode.
 
-### What You Need
+### The Fast Way
+
+Clone the repo, open it in [Claude Code](https://claude.com/claude-code), and run `/start`:
+
+```bash
+git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
+cd deepgram-changelog-podcast
+claude
+```
+
+```text
+/start https://tailscale.com/changelog/index.xml
+```
+
+Use your own feed's URL, or leave it off and `/start` will suggest a few. It checks your setup
+and offers to install what's missing, tells you where to put your API keys (never in the chat),
+plans the show from the feed, fills in `show.json` with you one question at a time, renders the
+first episode after you say go, opens the site, and asks how many more to make. The steps below are
+the same flow by hand, and `CLAUDE.md` tells Claude Code how to work in this repo.
+
 
 - **git, Python 3.9 or newer, and ffmpeg.** On a brand new Mac, run `xcode-select --install` (it
   brings git and Python 3.9), then install [Homebrew](https://brew.sh) and `brew install ffmpeg`.
@@ -39,7 +58,7 @@ Code's changelog came to 95 cents for a 10-minute episode.
 - **[Claude Code](https://claude.com/claude-code)** for step 4. It's optional; you can fill in
   `show.json` by hand instead.
 
-### Steps
+### Steps By Hand
 
 If you're an agent following these for someone, steps 4, 5, and 7 ask questions only your user can
 answer (the show's name, the cadence, how many episodes to pay for). Ask them.
@@ -153,11 +172,13 @@ Deepgram's show and live in code:
   lines at the end of every episode, so point them at your own channels.
 - **The writer's brief.** The `SYSTEM` prompt in `scripts/write_episode.py` describes a Deepgram
   docs audience. Edit it to describe yours.
-- **The segments.** If your product lines aren't Voice Agent, STT, and TTS, change `SEGMENTS` in
-  `backfill_plan.py`, `write_episode.py`, and `build_catalog.py`, plus `RUNNING_ORDER` in
-  `make_art.py`. The keyword patterns that sort entries into segments sit at the top of
-  `backfill_plan.py`.
-- **The cast.** `docs/cast.json` has the anchor and one voice per segment. Put your product's hard
+- **The segments.** `segments` in `show.json` holds the product segments that come after the fixed
+  three (Breaking changes and action required, Launches, and Quick hits), each with a back catalog
+  label, a spoken name, and a keyword pattern, plus the patterns for launches and quick hits.
+  `/plan-show` proposes them from your feed and checks how entries sort. The rules are in
+  `scripts/segments.py`, and `python3 scripts/backfill_plan.py` shows the result for free.
+- **The cast.** `docs/cast.json` has the anchor and one voice per segment, keyed by segment name
+  (`/plan-show` writes it). Put your product's hard
   words in `docs/key-terms.json` and run `python3 scripts/term_test.py --voice <voice>` once per
   voice, since pronunciation varies by voice.
 - **The format spec.** `docs/show-format.md` is what the writer follows, and it names Deepgram's
@@ -331,7 +352,7 @@ markdown body per day, where each `## ` heading is one entry. The picture versio
   show won't mention it. The fix for that belongs in the changelog.
 - **Expressivity is a beta Flux TTS setting.** Every voice runs at 1. Give it a listen after a Flux
   model update.
-- **A fork starts with Deepgram's segments and outro.** `show.json` doesn't cover them yet. In a
-  test on Claude Code's changelog, voice dictation fixes landed under Speech-to-Text, and the
-  episode closed with Deepgram's credit offer and support lines. [What Else To Change](#what-else-to-change) lists
-  where they live.
+- **A fork starts with Deepgram's outro.** `/plan-show` sets the segments and the cast, but the
+  spoken credits, support lines, and the writer's brief in `scripts/write_episode.py` still
+  describe Deepgram's show until you change them. [What Else To Change](#what-else-to-change)
+  lists where they live.

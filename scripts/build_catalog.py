@@ -27,13 +27,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cadence import CADENCE  # noqa: E402
+from segments import SEGMENTS as _NAMES, SHORT  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-SEGMENTS = [
-    ('Breaking changes and action required', 'Breaking'), ('Launches', 'Launches'),
-    ('Quick hits', 'Quick hits'), ('Voice Agent', 'Voice Agent'), ('Speech-to-Text', 'STT'),
-    ('Text-to-Speech', 'TTS'), ('Developer experience', 'DX'),
-]
+SEGMENTS = [(name, SHORT[name]) for name in _NAMES]
 SEGMENT_NAMES = {name for name, _ in SEGMENTS}
 ID_OK = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
 DATED = re.compile(r'^(\d{4}-\d{2}-\d{2}): (.+)$')

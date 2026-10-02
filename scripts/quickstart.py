@@ -6,6 +6,13 @@ Usage:
   python3 scripts/quickstart.py --more     skip to the offer, for a site that already has episodes
   python3 scripts/quickstart.py --port 8020 --no-open
 
+Without questions, for an agent driving it (Claude Code's /start does this):
+  python3 scripts/quickstart.py --check                          setup check only, exit 1 if anything's missing
+  python3 scripts/quickstart.py --cadence recommended --first-only   plan, take the cadence, render one, report
+  python3 scripts/quickstart.py --render 3                       render the 3 newest waiting episodes, report
+--cadence takes keep, recommended, weekly, biweekly, or monthly. These modes never prompt and never
+leave a server running; start the site with python3 scripts/serve.py.
+
 Reads keys from .env (or the environment), the show's name and feed from show.json. Nothing is
 spent until the first episode renders, and nothing after that until you say how many more.
 Leave it running to keep the site up; Ctrl-C stops the server.
@@ -55,7 +62,7 @@ def load_env() -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
-def check_setup() -> None:
+def check_setup(exit_on_problem: bool = True) -> list[str]:
     problems = []
     if sys.version_info < (3, 9):
         problems.append(f'Python 3.9 or newer is needed; this is {sys.version.split()[0]}.')
@@ -72,7 +79,9 @@ def check_setup() -> None:
         say('Setup needs a few things first:')
         for p in problems:
             say(f'  - {p}')
-        raise SystemExit(1)
+        if exit_on_problem:
+            raise SystemExit(1)
+    return problems
 
 
 def set_aside_example(show_name: str) -> None:
@@ -90,7 +99,7 @@ def set_aside_example(show_name: str) -> None:
     say(f'Moved the Deepgram example episode to {target.relative_to(ROOT)} so it can\'t collide with yours.')
 
 
-def offer_cadence(show: dict) -> bool:
+def offer_cadence(show: dict, choice: str | None = None) -> bool:
     """Before the first render, say what cadence the feed's history suggests and offer to switch
     show.json to it. Returns True if show.json changed, so the plan gets rebuilt."""
     try:
@@ -99,17 +108,22 @@ def offer_cadence(show: dict) -> bool:
         return False
     current = show.get('cadence', 'weekly')
     say(f"Cadence: {rec['reason']}")
-    if rec['cadence'] == current:
+    if rec['cadence'] == current and choice in (None, 'keep', 'recommended', current):
         say(f'{current.capitalize()} fits, and that is what show.json has.')
         return False
-    answer = input(f"Recommended: {rec['cadence']}. show.json says {current}. Switch to {rec['cadence']}? [y/N] ")
-    if answer.strip().lower() not in ('y', 'yes'):
+    if choice is None:
+        answer = input(f"Recommended: {rec['cadence']}. show.json says {current}. Switch to {rec['cadence']}? [y/N] ")
+        target = rec['cadence'] if answer.strip().lower() in ('y', 'yes') else current
+    else:
+        target = {'keep': current, 'recommended': rec['cadence']}.get(choice, choice)
+    if target == current:
+        say(f'Keeping {current}.')
         return False
     path = ROOT / 'show.json'
     data = json.loads(path.read_text())
-    data['cadence'] = rec['cadence']
+    data['cadence'] = target
     path.write_text(json.dumps(data, indent=2) + '\n')
-    say(f"show.json now says {rec['cadence']}. Re-planning.")
+    say(f"show.json now says {target}. Re-planning.")
     return True
 
 
@@ -277,7 +291,14 @@ def main() -> None:
     ap.add_argument('--more', action='store_true', help='skip the first episode and go to the offer')
     ap.add_argument('--port', type=int, default=8010)
     ap.add_argument('--no-open', action='store_true', help="don't open a browser")
+    ap.add_argument('--check', action='store_true', help='check the setup and exit (1 if anything is missing)')
+    ap.add_argument('--cadence', choices=['keep', 'recommended', 'weekly', 'biweekly', 'monthly'],
+                    help='answer the cadence question up front instead of being asked')
+    ap.add_argument('--first-only', action='store_true',
+                    help='render the first episode, report, and exit without asking or serving')
+    ap.add_argument('--render', metavar='N', help='render N more episodes (or "all") without asking, then exit')
     args = ap.parse_args()
+    unattended = args.first_only or args.render is not None
 
     load_env()
     sys.path.insert(0, str(SCRIPTS))
@@ -285,6 +306,11 @@ def main() -> None:
 
     phases: dict[str, float] = {}
     t = time.time()
+    if args.check:
+        problems = check_setup(exit_on_problem=False)
+        if not problems:
+            say('Setup OK: Python, ffmpeg, anthropic, pillow, and both API keys.')
+        raise SystemExit(1 if problems else 0)
     check_setup()
     phases['Setup check'] = time.time() - t
     feed = os.environ.get('CHANGELOG_FEED_URL') or SHOW['feed_url']
@@ -295,8 +321,10 @@ def main() -> None:
     t = time.time()
     run(str(SCRIPTS / 'backfill_plan.py'), '--refresh')
     phases['Reading the feed (free)'] = time.time() - t
-    if not args.more and not any(published(w['id']) for w in plan()):
-        if offer_cadence(SHOW):
+    if not args.more and args.render is None and not any(published(w['id']) for w in plan()):
+        # Unattended with no --cadence means keep show.json's; nothing is ever asked.
+        choice = args.cadence or ('keep' if unattended else None)
+        if offer_cadence(SHOW, choice):
             run(str(SCRIPTS / 'backfill_plan.py'))
     weeks = sorted((w['id'] for w in plan()), reverse=True)
     if not weeks:
@@ -305,7 +333,7 @@ def main() -> None:
     say(f'{len(weeks)} episode{"s" if len(weeks) != 1 else ""} worth of changelog, {len(weeks) - len(waiting)} already rendered.')
 
     first = None
-    if not args.more and waiting and len(waiting) == len(weeks):
+    if not args.more and args.render is None and waiting and len(waiting) == len(weeks):
         first = waiting.pop(0)
         say(f'Rendering the newest one, {first}, as your first episode. A quiet stretch of changelog '
             f'takes about 5 minutes and 20 cents; a busy one can take 20 minutes and about a dollar.')
@@ -315,6 +343,26 @@ def main() -> None:
     run(str(SCRIPTS / 'make_art.py'))
     run(str(SCRIPTS / 'build_catalog.py'))
     phases['Cover and catalog'] = time.time() - t
+
+    if unattended:
+        pick = []
+        if args.render is not None:
+            n = len(waiting) if args.render == 'all' else int(args.render)
+            pick = waiting[:n]
+            if pick:
+                say(f'Rendering {len(pick)}, newest first, {JOBS} at a time.')
+                t = time.time()
+                run(str(SCRIPTS / 'produce.py'), *pick, '--jobs', str(JOBS))
+                say(f'{len(pick)} rendered in {clock(time.time() - t)}.')
+                run(str(SCRIPTS / 'build_catalog.py'))
+        if first or pick:
+            report(phases if first else {}, [first] if first else pick)
+        usd, seconds, basis = measured()
+        left = len(waiting) - len(pick)
+        say()
+        say(f'{left} more episode{"s" if left != 1 else ""} waiting, about ${usd * left:.2f} all in.')
+        say(f'Start the site with: python3 scripts/serve.py --port {free_port(args.port)}')
+        return
 
     port = free_port(args.port)
     server = serve(port)

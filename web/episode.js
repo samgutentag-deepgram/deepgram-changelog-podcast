@@ -96,6 +96,16 @@ import { mmss, usd, count } from './format.js'
     // The server put the show's name in front of the colon; keep it and swap the episode title.
     document.title = document.title.split(':')[0] + ': ' + ep.title
     document.getElementById('title').textContent = ep.title
+    // The episode's own art, drawn from the segments that aired. Shown only once it loads, so an
+    // episode without art keeps the plain title. Click for the full-size image.
+    var artSrc = '/episodes/' + encodeURIComponent(id) + '/art.jpg'
+    var art = document.getElementById('ep-art'), artLink = document.getElementById('ep-art-link')
+    if (art && artLink) {
+      art.addEventListener('load', function () { artLink.hidden = false })
+      art.alt = 'Episode art for ' + ep.title
+      artLink.href = artSrc
+      art.src = artSrc
+    }
     var multi = !!(ep.cast && ep.cast.length)
     document.getElementById('meta').textContent = 'Hosted by ' + ep.host
       + (multi ? ' with ' + (ep.hosts || ep.cast).filter(function (n) { return n !== ep.host }).join(', ') : '') + ' · '

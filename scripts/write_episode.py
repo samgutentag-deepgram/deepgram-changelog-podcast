@@ -30,19 +30,18 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from backfill_plan import human_range, items, load_entries  # noqa: E402
 from show import SHOW  # noqa: E402
 from cadence import CADENCE  # noqa: E402
+from segments import SEGMENTS as SEGMENT_NAMES, SPOKEN  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
 MODEL = 'claude-opus-5'
-SEGMENTS = ['Breaking changes and action required', 'Launches', 'Quick hits', 'Voice Agent',
-            'Speech-to-Text', 'Text-to-Speech', 'Developer experience']
+SEGMENTS = list(SEGMENT_NAMES)
 # Claude pricing per million tokens (input, output), for the writer cost column. Thinking tokens
 # bill as output. A server-side fallback can answer on another model, so price by the model that ran.
 PRICE_PER_MTOK = {'claude-opus-5': (5.0, 25.0), 'claude-opus-4-8': (5.0, 25.0),
                   'claude-sonnet-5': (2.0, 10.0)}
 USAGE: list[dict] = []
-SPOKEN_SEGMENT = {'Voice Agent': 'Voice Agent', 'Speech-to-Text': 'speech-to-text',
-                  'Text-to-Speech': 'text-to-speech', 'Developer experience': 'developer experience'}
+SPOKEN_SEGMENT = SPOKEN
 PROMO_START, PROMO_END = date(2026, 9, 15), date(2026, 12, 31)
 ORDINAL = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 7: 'seventh',
            8: 'eighth', 9: 'ninth', 10: 'tenth', 11: 'eleventh', 12: 'twelfth', 13: 'thirteenth',
@@ -250,7 +249,7 @@ def assemble(raw: str, release: date, start: date, end: date, entries: list[dict
     # The intro is canned, so when a desk voice opens the show the anchor still hands off to it.
     intro_handoff = ''
     if first:
-        what = LAUNCHES[CADENCE.name] if heads[0] == 'Launches' else f'the {SPOKEN_SEGMENT[heads[0]]} updates'
+        what = LAUNCHES[CADENCE.name] if heads[0] == 'Launches' else f'the {SPOKEN_SEGMENT.get(heads[0], heads[0].lower())} updates'
         intro_handoff = f" {first['name']} kicks us off with {what}."
     last_voice = cast['segments'].get(last, cast['anchor'])['name']
     promo = PROMO_START <= release <= PROMO_END

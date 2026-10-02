@@ -142,28 +142,22 @@ what it costs, how it works, and how to make one from your own feed.</p>
       for the voices and the listen-back check (new accounts start with $200 in credit), and
       <a href="https://console.anthropic.com" target="_blank" rel="noopener">Anthropic</a> for the writer.
       You also need git, Python 3.9 or newer, and ffmpeg.</li>
-    <li><strong>Clone the repo and install.</strong> The two packages go in a virtual environment.
+    <li><strong>Clone the repo and open it in Claude Code.</strong>
       <pre class="build-code">git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
 cd deepgram-changelog-podcast
-python3 -m venv .venv
-source .venv/bin/activate
-pip install anthropic pillow
-cp .env.sample .env</pre>
-      Then put both keys in <code>.env</code>.</li>
-    <li><strong>Plan your show with Claude Code.</strong> Run <code>claude</code> in the repo, then
-      give it your feed. It reads the feed for free, proposes a name, segments, and a cast, and fills
-      in <code>show.json</code> once you pick.
-      <pre class="build-code">/plan-show https://your-site/changelog.rss</pre></li>
-    <li><strong>Run the quickstart.</strong> It checks your setup, recommends a cadence from your
-      feed's history (weekly, every two weeks, or monthly) and offers to switch, renders your newest
-      episode with its own art, and opens your site.
-      <pre class="build-code">python3 scripts/quickstart.py</pre></li>
+claude</pre></li>
+    <li><strong>Run <code>/start</code> with your feed.</strong>
+      <pre class="build-code">/start https://your-site/changelog.rss</pre>
+      It checks your setup, tells you where to put your keys, plans the show from your feed, and
+      fills in the show's name and details with you one question at a time. It recommends a
+      cadence (weekly, every two weeks, or monthly), renders your first episode once you say go,
+      and opens your site.</li>
     <li><strong>Pick how many more.</strong> It tells you how many more episodes your feed supports
-      and what they'd cost, then asks how many to render. The back catalog page fills in as they
+      and what they'd cost, then renders as many as you choose. The back catalog fills in as they
       land.</li>
   </ol>
-  <p class="lede">Every step, written so you or your agent can follow it, is in the
-  <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast#steps" target="_blank" rel="noopener">README</a>.</p>
+  <p class="lede">Rather do it by hand? Every step is in the
+  <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast#steps-by-hand" target="_blank" rel="noopener">README</a>.</p>
   <p class="lede">Under the hood, every line in the show is one request like this. Swap the
   <code>model</code> for a different voice and you have a second host.</p>
   <pre class="build-code">curl -X POST \

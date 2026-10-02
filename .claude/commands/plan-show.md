@@ -22,15 +22,22 @@ Work through these in order and show me the results as you go:
    about.
 5. Suggest 5 show names, each with a one-line pitch. Nothing that sounds like the product's
    official podcast.
-6. Propose 3 to 6 segments in running order. Keep "Breaking changes and action required",
-   "Launches", and "Quick hits" first, and name the rest after this product's areas. For each
-   one, list three real entries from the last year that would have landed in it.
-7. Propose a cast from the Flux TTS voices in docs/cast.json and
-   https://developers.deepgram.com/docs/flux-tts/overview: one anchor and a voice per segment.
+6. Propose 2 to 5 product segments in running order. Every show starts with three fixed ones,
+   "Breaking changes and action required", "Launches", and "Quick hits"; the product segments come
+   after, named for this product's areas. For each, give a short column label (one or two words),
+   how a handoff says it aloud ("the identity and access updates"), a keyword pattern (a
+   case-insensitive Python regex matched against an entry's heading, then its body), and three real
+   entries from the last year that would land in it. Also propose `launch_keywords` that match how
+   this feed titles launches (for example `\bGA\b|generally available|\bbeta\b|introducing`).
+   Read scripts/segments.py for how the rules apply.
+7. Propose a cast from the Flux TTS voices at https://developers.deepgram.com/docs/flux-tts/overview:
+   one anchor, plus a voice for Launches and for each product segment. The anchor reads Breaking
+   changes and Quick hits.
 8. Draft a canned intro line and outro for this show, in the style of the ones in
    scripts/write_episode.py, with the product's own support links in place of Deepgram's.
-9. List the exact edits that would make all of it real, starting with show.json, then file by
-   file.
+9. List what's left to edit by hand after show.json and docs/cast.json: the outro and canned show
+   notes in scripts/write_episode.py, the writer's brief there, docs/show-format.md, and the hard
+   words for docs/key-terms.json.
 
 Don't edit any files or make any paid API calls yet. Steps 2 and 3 are free; they only read the
 feed.
@@ -50,10 +57,21 @@ just say yes.
 5. `owner_email`: it goes in the podcast feed, where anyone can read it, and Apple Podcasts and
    Spotify send their verification email there if I submit the show. For a local test any
    placeholder works. For a real show, suggest a shared team address over a personal one.
+6. `segments`: show the product segments from step 6 as a short table (name, label, keywords) and
+   ask whether to use them as is.
+7. The cast from step 7: ask whether to use it as is.
 
 Fill `changelog_url` and `feed_url` from step 1 without asking. Leave `site_url`, `cadence`,
 `release_day`, and `attribution` as they are; the quickstart offers the cadence change itself.
-Then write show.json, touching nothing else, and show me the fields you set.
+Then write show.json, replacing its `segments` block with the new launch keywords and product
+segments (keep the breaking-change rules, and drop Deepgram's quick-hits and roll-up patterns
+unless they fit). Write docs/cast.json with the new anchor and one entry per segment name, keeping
+its `expressivity`. Touch nothing else.
+
+Then check the sorting for free: run `python3 scripts/backfill_plan.py` and count how many entries
+landed in each segment (research/backfill-plan.json). If a product segment got nothing, or Quick
+hits holds more than half of everything, tune the keywords, rerun, and tell me what you changed.
+Show me the final fields and the per-segment counts.
 
 Finally, tell me the next step. The quickstart asks questions as it goes, so it has to run in a
 terminal, not from inside this session. Open a second terminal tab in the repo and run

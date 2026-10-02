@@ -14,6 +14,44 @@
   "_cadence": "How often an episode comes out: weekly (Sunday to Saturday), biweekly, or monthly. release_day is the weekday it publishes, at least two days after its window ends. python3 scripts/cadence.py recommends one for your feed.",
   "cadence": "weekly",
   "release_day": "tuesday",
+  "_segments": "The segments after the fixed three (Breaking changes and action required, Launches, Quick hits), in running order. keywords are case-insensitive Python regexes matched against an entry's heading, then its body; the first product segment that matches wins. short is the back catalog's column label, spoken is how a handoff says it ('the speech-to-text updates'). rollup: true lets a multi-product entry (rollup_keywords) also tick that segment. Each segment's voice is in docs/cast.json, keyed by name.",
+  "segments": {
+    "launch_keywords": "\\bintroducing\\b|generally available|general availability|\\blaunch",
+    "launch_exclude": "self-hosted|endpoint",
+    "quick_hits_keywords": "self-hosted|nova-\\d (?:model )?(?:update|improve|adds)|improved models|new models|language|numerals|profanity|endpoint now generally available|concurrency|pricing|now available$|\\bmodels? support\\b|llm models?|model updates",
+    "quick_hits_exclude": "\\bsdk\\b|\\bcli\\b",
+    "rollup_keywords": "sdk releases|sdk support|\\bcli\\b|@deepgram/react",
+    "products": [
+      {
+        "name": "Voice Agent",
+        "short": "Voice Agent",
+        "spoken": "Voice Agent",
+        "rollup": true,
+        "keywords": "voice agent|\\bagent\\b|\\bllm\\b|think|updatelisten|update ?listen|injectagent|function call|claude|gemini|openai|nvidia|cartesia"
+      },
+      {
+        "name": "Speech-to-Text",
+        "short": "STT",
+        "spoken": "speech-to-text",
+        "rollup": true,
+        "keywords": "\\bnova\\b|nova-\\d|\\bflux\\b(?! tts)|diariz|redact|entit|transcri|speech-to-text|keyterm|language detection|topic|summar|sentiment|intelligence|smart format|\\bstt\\b"
+      },
+      {
+        "name": "Text-to-Speech",
+        "short": "TTS",
+        "spoken": "text-to-speech",
+        "rollup": true,
+        "keywords": "\\baura\\b|aura-\\d|\\btts\\b|text-to-speech|\\bspeak\\b|voice controls|expressivity"
+      },
+      {
+        "name": "Developer experience",
+        "short": "DX",
+        "spoken": "developer experience",
+        "rollup": false,
+        "keywords": "\\bsdk\\b|\\bcli\\b|react|docs?\\b|documentation|correction|saga|\\bmcp\\b|playground|console|api key|token|developer"
+      }
+    ]
+  },
   "_attribution": "A 'Voiced with Deepgram Flux TTS' credit in the site footer and the feed description. Set it to false to remove both.",
   "attribution": true
 }
