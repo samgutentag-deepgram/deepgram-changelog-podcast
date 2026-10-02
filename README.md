@@ -22,47 +22,116 @@ links above.
 Point this at an RSS or Atom feed and you get a multi-voice podcast of it. It's built around
 changelogs, and a changelog fits the segments out of the box, but any feed that carries full posts
 works. A blog or news feed will want its own segments (see [What Else To Change](#what-else-to-change)).
-You can have your own show running on your laptop in under half an hour. Deepgram's show averages about 20 cents an episode, all in. A busy
-week of a bigger changelog costs more: a test on Claude Code's changelog came to 95 cents for a
-10-minute episode.
 
-1. **Get two API keys.** [Deepgram](https://console.deepgram.com/signup) for the voices and the
-   listen-back check (new accounts start with $200 in credit), and
-   [Anthropic](https://console.anthropic.com) for the writer.
-2. **Clone and install.** You need git, Python 3.9 or newer, and ffmpeg. On a brand new Mac,
-   run `xcode-select --install` first (it brings git and Python 3.9), then install
-   [Homebrew](https://brew.sh) for ffmpeg. The packages go in a virtual environment, which works
-   the same on every Python and keeps them out of your system's.
+You can have your own show running on your laptop in under half an hour. Deepgram's show averages
+about 20 cents an episode, all in. A busy stretch of a bigger changelog costs more: a test on Claude
+Code's changelog came to 95 cents for a 10-minute episode.
+
+### What You Need
+
+- **git, Python 3.9 or newer, and ffmpeg.** On a brand new Mac, run `xcode-select --install` (it
+  brings git and Python 3.9), then install [Homebrew](https://brew.sh) and `brew install ffmpeg`.
+- **A Deepgram API key** for the voices and the listen-back check:
+  [console.deepgram.com/signup](https://console.deepgram.com/signup). New accounts start with $200
+  in credit.
+- **An Anthropic API key** for the writer: [console.anthropic.com](https://console.anthropic.com).
+- **[Claude Code](https://claude.com/claude-code)** for step 4. It's optional; you can fill in
+  `show.json` by hand instead.
+
+### Steps
+
+If you're an agent following these for someone, steps 4, 5, and 6 ask questions only your user can
+answer (the show's name, the cadence, how many episodes to pay for). Ask them.
+
+1. **Clone the repo.**
 
    ```bash
    git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
    cd deepgram-changelog-podcast
-   brew install ffmpeg                    # or your package manager's ffmpeg
-   python3 -m venv .venv
-   source .venv/bin/activate              # once per new terminal
-   pip install anthropic pillow
-   cp .env.sample .env                    # then add DEEPGRAM_API_KEY and ANTHROPIC_API_KEY
    ```
 
-3. **Name your show.** Open `show.json` and set `name`, `wordmark` (the two lines drawn on the
-   art), `description`, `author`, `owner_email`, `changelog_url`, and `feed_url`. Leave `site_url`
-   as `http://localhost:8010` until you deploy.
-4. **Run the quickstart.**
+2. **Install the two Python packages in a virtual environment.** A venv works the same on macOS's
+   built-in Python and on Homebrew's, and keeps the packages out of your system's.
+
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate    # run this again in every new terminal
+   pip install anthropic pillow
+   ```
+
+3. **Add your keys.** Copy the sample, then put both keys in `.env` (it's gitignored).
+
+   ```bash
+   cp .env.sample .env
+   ```
+
+   ```
+   DEEPGRAM_API_KEY=...
+   ANTHROPIC_API_KEY=...
+   ```
+
+4. **Plan your show with Claude Code.** Run `claude` in the repo and paste this, with your three
+   lines filled in. It reads your feed for free and proposes a show before it touches anything.
+
+   ```text
+   I want to turn my product's changelog into a podcast with this repo.
+
+   Product: <your product name>
+   Changelog page: <https://your-site/changelog>
+   RSS or Atom feed: <https://your-site/changelog.rss>
+
+   1. Set CHANGELOG_FEED_URL to the feed and run `python3 scripts/backfill_plan.py --refresh`. Tell
+      me how many weeks and entries it found, and whether the items carry full posts or only teasers.
+   2. Read the entry titles in research/backfill-plan.json and tell me what this changelog is
+      mostly about.
+   3. Suggest 5 show names, each with a one-line pitch. Nothing that sounds like the product's
+      official podcast.
+   4. Propose 3 to 6 segments in running order. Keep "Breaking changes and action required",
+      "Launches", and "Quick hits" first, and name the rest after this product's areas. For each
+      one, list three real entries from the last year that would have landed in it.
+   5. Propose a cast from the Flux TTS voices in docs/cast.json and
+      https://developers.deepgram.com/docs/flux-tts/overview: one anchor and a voice per segment.
+   6. Draft a canned intro line and outro for my product, in the style of the ones in
+      scripts/write_episode.py, with my own support links in place of Deepgram's.
+   7. List the exact edits that would make all of it real, starting with show.json, then file by
+      file.
+
+   Don't edit any files or make any paid API calls until I've picked a name and segments.
+   ```
+
+5. **Fill in `show.json`.** Pick a name from step 4, then tell Claude:
+
+   ```text
+   Use <the name>. Only update show.json for now: name, wordmark, description, author,
+   owner_email, changelog_url, and feed_url.
+   ```
+
+   Or edit it by hand. `wordmark` is the two lines drawn on the art, a small one and a big one.
+   Leave `site_url`, `cadence`, and `release_day` alone; the next step handles cadence. Then exit
+   Claude Code.
+
+6. **Run the quickstart.**
 
    ```bash
    python3 scripts/quickstart.py
    ```
 
-   It checks your setup and reads your feed (free). Then it recommends a cadence from your feed's
-   history and offers to switch `show.json` to it (see [Cadence](#cadence)). After that it renders
-   the newest window as your first episode, draws the show cover and that episode's art, and opens
-   the site in your browser. Then it tells
-   you how many more weeks have entries, what rendering them would cost, and asks how many you
-   want. Nothing past the first episode costs anything until you answer.
-5. **Watch the back catalog.** [localhost:8010/back-catalog](http://localhost:8010/back-catalog)
-   lists every week in your changelog, rendered or not, with what each one cost and an estimate for
-   the rest. It refreshes every minute, so you can watch episodes land while the quickstart works.
-   Run `python3 scripts/quickstart.py --more` any time to render more.
+   In order, it:
+   - checks your setup (Python, ffmpeg, both packages, both keys) and says what to fix
+   - reads your feed, which is free
+   - recommends a cadence from the feed's history and asks whether to switch `show.json` to it
+     (see [Cadence](#cadence)). Answer `y` to take it.
+   - renders the newest episode, which takes 5 to 25 minutes and about 20 cents to a dollar
+   - draws the show cover and the episode's art, then opens the site in your browser at
+     `localhost:8010` (or the next free port, and it prints the address)
+
+7. **Look around.** The episode page has the player, chapters, the script following along, show
+   notes, and what that episode cost. **Back catalog** in the header lists every episode your feed
+   supports, rendered or not, with an estimate for the rest.
+8. **Render more.** Back in the terminal, the quickstart says how many more episodes your feed has
+   and what they'd cost, then asks "How many more?" Type a number, `all`, or press Enter to stop.
+   The back catalog refreshes every minute, so you can watch them land. Ctrl-C stops the site, and
+   `python3 scripts/quickstart.py --more` picks up where you left off.
 
 The first episode still sounds like Deepgram's show in a few places. See
 [What Else To Change](#what-else-to-change) for the outro, the segments, and the cast.
@@ -88,38 +157,6 @@ and no more than a fifth of episodes would be empty. Measured on 2026-10-01:
 | Cloudflare | 35,000 characters | weekly, with long episodes |
 | Linear | 1,500 characters | monthly |
 | Tailscale | 1,000 characters | monthly |
-
-### Plan Your Show With Claude
-
-Not sure what to call it or how to split the segments? Open the repo in
-[Claude Code](https://claude.com/claude-code) and paste this with your links filled in. It reads
-your changelog for free and proposes a show before it touches anything.
-
-```text
-I want to turn my product's changelog into a weekly podcast with this repo.
-
-Product: <your product name>
-Changelog page: <https://your-site/changelog>
-RSS or Atom feed: <https://your-site/changelog.rss>
-
-1. Set CHANGELOG_FEED_URL to the feed and run `python3 scripts/backfill_plan.py --refresh`. Tell
-   me how many weeks and entries it found, and whether the items carry full posts or only teasers.
-2. Read the entry titles in research/backfill-plan.json and tell me what this changelog is
-   mostly about.
-3. Suggest 5 show names, each with a one-line pitch. Nothing that sounds like the product's
-   official podcast.
-4. Propose 3 to 6 segments in running order. Keep "Breaking changes and action required",
-   "Launches", and "Quick hits" first, and name the rest after this product's areas. For each
-   one, list three real entries from the last year that would have landed in it.
-5. Propose a cast from the Flux TTS voices in docs/cast.json and
-   https://developers.deepgram.com/docs/flux-tts/overview: one anchor and a voice per segment.
-6. Draft a canned intro line and outro for my product, in the style of the ones in
-   scripts/write_episode.py, with my own support links in place of Deepgram's.
-7. List the exact edits that would make all of it real, starting with show.json, then file by
-   file.
-
-Don't edit any files or make any paid API calls until I've picked a name and segments.
-```
 
 ### What Else To Change
 
