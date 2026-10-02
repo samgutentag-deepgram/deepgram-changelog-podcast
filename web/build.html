@@ -150,9 +150,10 @@ source .venv/bin/activate
 pip install anthropic pillow
 cp .env.sample .env</pre>
       Then put both keys in <code>.env</code>.</li>
-    <li><strong>Plan your show with Claude Code.</strong> Run <code>claude</code> in the repo and paste
-      the planning prompt from the README with your feed filled in. It reads your feed for free and
-      proposes a name, segments, and a cast, then fills in <code>show.json</code> once you pick.</li>
+    <li><strong>Plan your show with Claude Code.</strong> Run <code>claude</code> in the repo, then
+      give it your feed. It reads the feed for free, proposes a name, segments, and a cast, and fills
+      in <code>show.json</code> once you pick.
+      <pre class="build-code">/plan-show https://your-site/changelog.rss</pre></li>
     <li><strong>Run the quickstart.</strong> It checks your setup, recommends a cadence from your
       feed's history (weekly, every two weeks, or monthly) and offers to switch, renders your newest
       episode with its own art, and opens your site.

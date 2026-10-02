@@ -41,7 +41,7 @@ Code's changelog came to 95 cents for a 10-minute episode.
 
 ### Steps
 
-If you're an agent following these for someone, steps 4, 5, and 6 ask questions only your user can
+If you're an agent following these for someone, steps 4, 5, and 7 ask questions only your user can
 answer (the show's name, the cadence, how many episodes to pay for). Ask them.
 
 1. **Clone the repo.**
@@ -71,47 +71,21 @@ answer (the show's name, the cadence, how many episodes to pay for). Ask them.
    ANTHROPIC_API_KEY=...
    ```
 
-4. **Plan your show with Claude Code.** Run `claude` in the repo and paste this, with your three
-   lines filled in. It reads your feed for free and proposes a show before it touches anything.
+4. **Plan your show with Claude Code.** Run `claude` in the repo, then:
 
    ```text
-   I want to turn my product's changelog into a podcast with this repo.
-
-   Product: <your product name>
-   Changelog page: <https://your-site/changelog>
-   RSS or Atom feed: <https://your-site/changelog.rss>
-
-   1. Set CHANGELOG_FEED_URL to the feed and run `python3 scripts/backfill_plan.py --refresh`. Tell
-      me how many weeks and entries it found, and whether the items carry full posts or only teasers.
-   2. Read the entry titles in research/backfill-plan.json and tell me what this changelog is
-      mostly about.
-   3. Suggest 5 show names, each with a one-line pitch. Nothing that sounds like the product's
-      official podcast.
-   4. Propose 3 to 6 segments in running order. Keep "Breaking changes and action required",
-      "Launches", and "Quick hits" first, and name the rest after this product's areas. For each
-      one, list three real entries from the last year that would have landed in it.
-   5. Propose a cast from the Flux TTS voices in docs/cast.json and
-      https://developers.deepgram.com/docs/flux-tts/overview: one anchor and a voice per segment.
-   6. Draft a canned intro line and outro for my product, in the style of the ones in
-      scripts/write_episode.py, with my own support links in place of Deepgram's.
-   7. List the exact edits that would make all of it real, starting with show.json, then file by
-      file.
-
-   Don't edit any files or make any paid API calls until I've picked a name and segments.
+   /plan-show https://tailscale.com/changelog/index.xml
    ```
 
-5. **Fill in `show.json`.** Pick a name from step 4, then tell Claude:
+   Use your own feed's URL. It reads the feed for free, recommends a cadence, and proposes show
+   names, segments, a cast, and an intro and outro, without editing anything. When you pick a name,
+   it fills in `show.json` (the name, the two lines drawn on the art, the description, and the
+   links) and tells you to run the quickstart. Then exit Claude Code.
 
-   ```text
-   Use <the name>. Only update show.json for now: name, wordmark, description, author,
-   owner_email, changelog_url, and feed_url.
-   ```
+   The command is a prompt in [`.claude/commands/plan-show.md`](.claude/commands/plan-show.md).
+   Without Claude Code, read it and fill in `show.json` by hand.
 
-   Or edit it by hand. `wordmark` is the two lines drawn on the art, a small one and a big one.
-   Leave `site_url`, `cadence`, and `release_day` alone; the next step handles cadence. Then exit
-   Claude Code.
-
-6. **Run the quickstart.**
+5. **Run the quickstart.**
 
    ```bash
    python3 scripts/quickstart.py
@@ -126,10 +100,10 @@ answer (the show's name, the cadence, how many episodes to pay for). Ask them.
    - draws the show cover and the episode's art, then opens the site in your browser at
      `localhost:8010` (or the next free port, and it prints the address)
 
-7. **Look around.** The episode page has the player, chapters, the script following along, show
+6. **Look around.** The episode page has the player, chapters, the script following along, show
    notes, and what that episode cost. **Back catalog** in the header lists every episode your feed
    supports, rendered or not, with an estimate for the rest.
-8. **Render more.** Back in the terminal, the quickstart says how many more episodes your feed has
+7. **Render more.** Back in the terminal, the quickstart says how many more episodes your feed has
    and what they'd cost, then asks "How many more?" Type a number, `all`, or press Enter to stop.
    The back catalog refreshes every minute, so you can watch them land. Ctrl-C stops the site, and
    `python3 scripts/quickstart.py --more` picks up where you left off.
