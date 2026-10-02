@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Deepgram Changelog: Build your own</title>
 <meta name="description" content="Turn any RSS feed into a multi-voice podcast with Deepgram Flux TTS. How the Deepgram changelog became one, what each episode costs, and how to build your own.">
-<meta property="og:title" content="Turn any RSS feed into a podcast">
+<meta property="og:title" content="Turn any RSS feed into a podcast with Deepgram">
 <meta property="og:description" content="Point it at an RSS feed and get a multi-voice podcast, voiced by Deepgram Flux TTS. Here is what it costs and how to build your own.">
 <meta property="og:image" content="https://dg-devrel-deepgram-changelog.fly.dev/media/build-poster.jpg">
 <meta property="og:url" content="https://dg-devrel-deepgram-changelog.fly.dev/build">
@@ -75,11 +75,15 @@
 </dialog>
 
 
-<h1>Turn any RSS feed into a podcast</h1>
-<p class="lede">Point it at an RSS feed and you get a multi-voice podcast, written by Claude and
-voiced by Deepgram Flux TTS. The first show built on it is the Deepgram developer changelog: every
-Tuesday, six voices read the week's entries, and one small server publishes the episode. Here is
-what it costs, how it works, and how to make one from your own feed.</p>
+<h1>Turn any RSS feed into a podcast with Deepgram</h1>
+<p class="lede">Changelogs are written to be read, and almost nobody reads them. Deepgram ships
+something almost every week, so I built a show that reads its changelog to you. Every Tuesday,
+Claude writes the script, six Deepgram Flux TTS voices perform it, and Deepgram speech-to-text
+checks every line before it ships. Nobody records anything. The same code works on any RSS
+feed.</p>
+<p class="lede">There are 141 episodes so far, going back to 2020. They run one to six minutes, and
+a typical week comes in around two. Here is what it costs, how to make one from your own feed, and
+how it works.</p>
 
 <video class="build-video" controls playsinline preload="metadata" poster="media/build-poster.jpg"
        width="1920" height="1080">
@@ -102,6 +106,39 @@ what it costs, how it works, and how to make one from your own feed.</p>
   <p class="cost-fine">Flux TTS is $0.045 per 1,000 characters on Pay As You Go, which works out to
   about 4 cents per minute of finished audio. A year of weekly episodes runs about $10 all in.
   Pricing as of 2026-09-25; see <a href="https://deepgram.com/pricing" target="_blank" rel="noopener">deepgram.com/pricing</a>.</p>
+  <p class="cost-fine">A busy week on a bigger changelog costs more. The first episode of a show
+  built from Claude Code's changelog ran almost 16 minutes, took 37 minutes to make, and cost
+  $1.26.</p>
+</section>
+
+<section class="build-sec" aria-labelledby="diy-h">
+  <h2 id="diy-h">Build your own</h2>
+  <p class="lede">The whole show is open source, and the repo comes with a quickstart. It's built
+  around changelogs, but any RSS or Atom feed with full posts works. A first episode takes 5 to 25
+  minutes to render and costs 20 cents to a dollar, more for a busy week.</p>
+  <ol class="build-steps">
+    <li><strong>Get two API keys.</strong> <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">Deepgram</a>
+      for the voices and the listen-back check (new accounts start with $200 in credit), and
+      <a href="https://console.anthropic.com" target="_blank" rel="noopener">Anthropic</a> for the writer.
+      You also need git, Python 3.9 or newer, and ffmpeg.</li>
+    <li><strong>Clone the repo and open it in Claude Code.</strong>
+      <pre class="build-code">git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
+cd deepgram-changelog-podcast
+claude</pre></li>
+    <li><strong>Run <code>/start</code> with your feed.</strong>
+      <pre class="build-code">/start https://code.claude.com/docs/en/changelog/rss.xml</pre>
+      It checks your setup, tells you where to put your keys (never in the chat), plans the show
+      from your feed, and
+      fills in the show's name and details with you one question at a time. It recommends a
+      cadence (weekly, every two weeks, or monthly), renders your first episode once you say go,
+      and opens your site.</li>
+    <li><strong>Pick how many more.</strong> It tells you how many more episodes your feed supports
+      and what they'd cost, then renders as many as you choose. The back catalog fills in as they
+      land.</li>
+  </ol>
+  <p class="lede">Use your own feed's URL, or leave it off and <code>/start</code> will suggest a
+  few. Rather do it by hand? Every step is in the
+  <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast#steps-by-hand" target="_blank" rel="noopener">README</a>.</p>
 </section>
 
 <section class="build-sec" aria-labelledby="how-h">
@@ -109,7 +146,8 @@ what it costs, how it works, and how to make one from your own feed.</p>
   <ol class="build-steps">
     <li><strong>Read the feed.</strong> The pipeline pulls the changelog's RSS or Atom feed and turns
       each day into markdown, one heading per entry. It needs the full post in every item. A feed of
-      teasers gives the writer one sentence per release.</li>
+      teasers gives the writer one sentence per release. Those entries are the only facts an
+      episode may use.</li>
     <li><strong>Segment it.</strong> Entries are grouped into the window each episode covers and sorted
       into fixed segments, with breaking changes always first, then launches, quick hits, and one
       segment per product area.</li>
@@ -121,46 +159,20 @@ what it costs, how it works, and how to make one from your own feed.</p>
       at least two days after its window ends. This show covers Sunday to Saturday and releases
       Tuesday, so Monday is a buffer for late entries. A scheduled job wakes up every morning at 5am
       Pacific and only does anything on a release date.</li>
-    <li><strong>Write.</strong> Claude turns the entries into a script for those segments. Code checks
+    <li><strong>Write.</strong> Claude turns the entries into a script for those segments. The
+      intro, outro, cost, and contact lines are fixed text. Code checks
       the script before anything is voiced: segments in order, every link real, no URLs read out
       loud.</li>
     <li><strong>Voice.</strong> One Flux TTS request per paragraph. Brooke anchors, and Drew, Kit,
-      Miles, Cole, and Elise each take a product segment and hand off to the next voice.</li>
+      Miles, Cole, and Elise each take a product segment and hand off to the next voice. Every
+      voice runs at expressivity 1.</li>
     <li><strong>Check.</strong> Deepgram speech-to-text listens back to every episode and compares it
-      to the script. Average word error is 0.29%, and no episode is over 3%.</li>
+      to the script. A mismatch gets re-rendered up to three times, and the best take wins.
+      Average word error is 0.29%, and no episode is over 3%.</li>
     <li><strong>Assemble and publish.</strong> The clips join into one MP3 with chapters and a
       transcript, the episode gets art drawn from the segments that aired, and it lands on this site,
       in the podcast feed, and in the back catalog with its own cost receipt.</li>
   </ol>
-</section>
-
-<section class="build-sec" aria-labelledby="diy-h">
-  <h2 id="diy-h">Build one yourself</h2>
-  <p class="lede">The whole show is open source, and the repo comes with a quickstart. It's built
-  around changelogs, but any RSS or Atom feed with full posts works, and you can have your own show
-  running on your laptop in under half an hour. A quiet week costs about 20 cents to render, and a busy one closer to a
-  dollar.</p>
-  <ol class="build-steps">
-    <li><strong>Get two API keys.</strong> <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">Deepgram</a>
-      for the voices and the listen-back check (new accounts start with $200 in credit), and
-      <a href="https://console.anthropic.com" target="_blank" rel="noopener">Anthropic</a> for the writer.
-      You also need git, Python 3.9 or newer, and ffmpeg.</li>
-    <li><strong>Clone the repo and open it in Claude Code.</strong>
-      <pre class="build-code">git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
-cd deepgram-changelog-podcast
-claude</pre></li>
-    <li><strong>Run <code>/start</code> with your feed.</strong>
-      <pre class="build-code">/start https://your-site/changelog.rss</pre>
-      It checks your setup, tells you where to put your keys, plans the show from your feed, and
-      fills in the show's name and details with you one question at a time. It recommends a
-      cadence (weekly, every two weeks, or monthly), renders your first episode once you say go,
-      and opens your site.</li>
-    <li><strong>Pick how many more.</strong> It tells you how many more episodes your feed supports
-      and what they'd cost, then renders as many as you choose. The back catalog fills in as they
-      land.</li>
-  </ol>
-  <p class="lede">Rather do it by hand? Every step is in the
-  <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast#steps-by-hand" target="_blank" rel="noopener">README</a>.</p>
   <p class="lede">Under the hood, every line in the show is one request like this. Swap the
   <code>model</code> for a different voice and you have a second host.</p>
   <pre class="build-code">curl -X POST \
