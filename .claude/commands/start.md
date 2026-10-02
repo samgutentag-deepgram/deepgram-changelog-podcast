@@ -12,6 +12,10 @@ Ground rules for the whole walkthrough:
   long it takes, and ask first.
 - Never ask me to paste an API key into this chat. If I paste one anyway, don't repeat it back, and
   suggest I rotate it.
+- When I need to run a setup command (installing ffmpeg, creating the venv, copying `.env.sample`),
+  give it to me as one line starting with `!`, for example `! python3 -m venv .venv`, and tell me
+  to type it at this prompt. `!` runs it in this session, so we both see the output and you can
+  carry on from it. Offer to run it for me instead if I'd rather.
 - Run Python through the virtual environment directly (`.venv/bin/python ...`), so nothing depends
   on an activated shell.
 - Keep each message short: what just happened, then the one thing you need from me.
@@ -22,12 +26,12 @@ Ground rules for the whole walkthrough:
    first episode takes 5 to 25 minutes and costs about 20 cents to a dollar.
 
 2. **Check the tools.** Run `python3 --version` (needs 3.9 or newer), `git --version`, and
-   `which ffmpeg`. If ffmpeg is missing, tell me how to install it (on a Mac, `brew install
-   ffmpeg`, after installing Homebrew from https://brew.sh) and wait. If `.venv` doesn't exist,
-   offer to create it and install the packages:
-   `python3 -m venv .venv && .venv/bin/pip install anthropic pillow`.
+   `which ffmpeg`. If ffmpeg is missing, tell me how to install it (on a Mac,
+   `! brew install ffmpeg`, after installing Homebrew from https://brew.sh) and wait. If `.venv`
+   doesn't exist, give me the line to create it and install the packages, about 30 seconds:
+   `! python3 -m venv .venv && .venv/bin/pip install anthropic pillow`.
 
-3. **Keys.** If `.env` doesn't exist, run `cp .env.sample .env`. Then tell me to open `.env` in my
+3. **Keys.** If `.env` doesn't exist, give me `! cp .env.sample .env` to run. Then tell me to open `.env` in my
    editor and fill in `DEEPGRAM_API_KEY` (https://console.deepgram.com/signup, new accounts get
    $200 in credit) and `ANTHROPIC_API_KEY` (https://console.anthropic.com), and to tell you when
    that's done. Then run `.venv/bin/python scripts/quickstart.py --check` and fix whatever it
