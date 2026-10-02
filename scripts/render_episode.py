@@ -279,7 +279,7 @@ def write_site_data(ep: Path, script_md: str, rows, chapters, duration, chars, u
             # the Flux TTS figure, which is the one the outro says out loud.
             'writer_usd': (json.loads((ep / 'writer.json').read_text()).get('usd')
                            if (ep / 'writer.json').exists() else None),
-            # True when writer.json is a reconstruction (estimate_writer_cost.py), not a real bill.
+            # True when writer.json is a reconstruction of an older episode's bill, not a real one.
             'writer_estimated': (bool(json.loads((ep / 'writer.json').read_text()).get('estimated'))
                                  if (ep / 'writer.json').exists() else False),
             'pricing_url': 'https://deepgram.com/pricing', 'pricing_as_of': PRICING_AS_OF,

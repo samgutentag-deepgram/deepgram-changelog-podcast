@@ -42,7 +42,6 @@ PRICE_PER_MTOK = {'claude-opus-5': (5.0, 25.0), 'claude-opus-4-8': (5.0, 25.0),
                   'claude-sonnet-5': (2.0, 10.0)}
 USAGE: list[dict] = []
 SPOKEN_SEGMENT = SPOKEN
-PROMO_START, PROMO_END = date(2026, 9, 15), date(2026, 12, 31)
 ORDINAL = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 7: 'seventh',
            8: 'eighth', 9: 'ninth', 10: 'tenth', 11: 'eleventh', 12: 'twelfth', 13: 'thirteenth',
            14: 'fourteenth', 15: 'fifteenth', 16: 'sixteenth', 17: 'seventeenth', 18: 'eighteenth',
@@ -54,33 +53,70 @@ ORDINAL = {1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'six
 # How the outro wraps up the window it covered, per cadence.
 WRAP = {'weekly': "That's the week.", 'biweekly': "That's two weeks of changes.", 'monthly': "That's the month."}
 LAUNCHES = {'weekly': "this week's launches", 'biweekly': 'the launches', 'monthly': "this month's launches"}
-OUTRO_COST = (WRAP[CADENCE.name] + " This episode was voiced start to finish by Deepgram Flux TTS, and "
-              "rendering it cost thirty cents, at the pay as you go rate. Looking to start building "
-              "with Deepgram? New Console accounts start with a two hundred dollar credit, which "
-              "covers more than one thousand episodes like this one.")
-OUTRO_PROMO = ("As a bonus through December thirty first of this year, every dollar you spend on Flux "
-               "TTS is matched with a dollar in bonus credits, up to five hundred dollars per project. "
-               "What you earn never expires, and it works on any Deepgram API in that project. It's "
-               "open to Pay As You Go and Growth projects, and the full terms are in the show notes.")
-OUTRO_HELP = ("Need more help, or have questions about anything in today's episode? Email support at "
-              "deepgram dot com and include the dg request ID header from the failing response, it's "
-              "the fastest way to get a fix. For questions and a second pair of eyes, find us on "
-              "Discord at D P G R dot A M slash discord, or in GitHub Discussions under the Deepgram "
-              "org. If you think something's down, check status dot deepgram dot com first. The full "
-              "changelog can be found at developers dot deepgram dot com slash changelog. See you "
-              f"{CADENCE.next_phrase()}!")
-CANNED_NOTES = {
-    'Credits and pricing': [('Deepgram pricing', 'https://deepgram.com/pricing'),
-                            ('Sign up for Console', 'https://console.deepgram.com')],
-    'Get in touch': [('Discord', 'https://dpgr.am/discord'),
-                     ('GitHub Discussions', 'https://github.com/orgs/deepgram/discussions'),
-                     ('status.deepgram.com', 'https://status.deepgram.com'),
-                     ('support@deepgram.com', 'mailto:support@deepgram.com')],
+# The spoken outro and its show notes, from show.json "outro"; Deepgram's own show is the default.
+# fill_cost.py rewrites "rendering it cost ..., at the pay as you go rate" and "covers more than ...
+# episodes like this one" with the episode's real figures, so those phrases are placeholders.
+DEEPGRAM_OUTRO = {
+    'cost': ("This episode was voiced start to finish by Deepgram Flux TTS, and rendering it cost thirty "
+             "cents, at the pay as you go rate."),
+    'pitch': ("Looking to start building with Deepgram? New Console accounts start with a two hundred "
+              "dollar credit, which covers more than one thousand episodes like this one."),
+    'promo': {
+        'start': '2026-09-15', 'end': '2026-12-31',
+        'text': ("As a bonus through December thirty first of this year, every dollar you spend on Flux "
+                 "TTS is matched with a dollar in bonus credits, up to five hundred dollars per project. "
+                 "What you earn never expires, and it works on any Deepgram API in that project. It's "
+                 "open to Pay As You Go and Growth projects, and the full terms are in the show notes."),
+        'note': ['Flux TTS credit match terms',
+                 'https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions'],
+        'note_section': 'Credits and pricing',
+    },
+    'help': ("Need more help, or have questions about anything in today's episode? Email support at "
+             "deepgram dot com and include the dg request ID header from the failing response, it's "
+             "the fastest way to get a fix. For questions and a second pair of eyes, find us on "
+             "Discord at D P G R dot A M slash discord, or in GitHub Discussions under the Deepgram "
+             "org. If you think something's down, check status dot deepgram dot com first. The full "
+             "changelog can be found at developers dot deepgram dot com slash changelog."),
+    'notes': {
+        'Credits and pricing': [['Deepgram pricing', 'https://deepgram.com/pricing'],
+                                ['Sign up for Console', 'https://console.deepgram.com']],
+        'Get in touch': [['Discord', 'https://dpgr.am/discord'],
+                         ['GitHub Discussions', 'https://github.com/orgs/deepgram/discussions'],
+                         ['status.deepgram.com', 'https://status.deepgram.com'],
+                         ['support@deepgram.com', 'mailto:support@deepgram.com']],
+    },
 }
-PROMO_NOTE = ('Flux TTS credit match terms',
-              'https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions')
+# What the writer is told about the show's source and listener, from show.json "writer".
+DEEPGRAM_WRITER = {
+    'source': 'the Deepgram developer changelog',
+    'listeners': 'developers',
+    'audience': 'someone building on Deepgram',
+    'product': 'Deepgram',
+    'rules': ['A docs correction is never a breaking change. It goes under Developer experience.',
+              'Many weeks are mostly Nova-3 language updates. Collapse them into one or two quick-hit '
+              'sentences that name the languages briefly and say whether a code change is needed.'],
+    'launch_rule': ('Treat an entry as a launch only if it introduces a new model, product, or API, or announces '
+                    'general availability of one. Regional endpoints and self-hosted releases are quick hits.'),
+}
 
-SYSTEM = """You write scripts for {show}, a {cadence} podcast that reads the Deepgram developer changelog back to developers. Text-to-speech voices perform every word, so you write for the ear.
+
+def _section(key: str, default: dict) -> dict:
+    given = SHOW.get(key)
+    return {**default, **{k: v for k, v in given.items() if not k.startswith('_')}} if isinstance(given, dict) else dict(default)
+
+
+OUTRO = _section('outro', DEEPGRAM_OUTRO)
+WRITER = _section('writer', DEEPGRAM_WRITER)
+OUTRO_COST = ' '.join(x for x in (WRAP[CADENCE.name], OUTRO.get('cost'), OUTRO.get('pitch')) if x)
+PROMO = OUTRO.get('promo') or None
+OUTRO_PROMO = PROMO['text'] if PROMO else ''
+PROMO_START = date.fromisoformat(PROMO['start']) if PROMO else date.max
+PROMO_END = date.fromisoformat(PROMO['end']) if PROMO else date.min
+OUTRO_HELP = ' '.join(x for x in (OUTRO.get('help'), f'See you {CADENCE.next_phrase()}!') if x)
+CANNED_NOTES = {k: [tuple(link) for link in v] for k, v in (OUTRO.get('notes') or {}).items()}
+PROMO_NOTE = tuple(PROMO['note']) if PROMO and PROMO.get('note') else None
+
+SYSTEM = """You write scripts for {show}, a {cadence} podcast that reads {source} back to {listeners}. Text-to-speech voices perform every word, so you write for the ear.
 
 The show's full format spec follows, then the cast, then a finished example episode. The spec is authoritative. Follow its editorial rule, segment rules, segment announcements, handoff rules, and pronunciation guidance exactly.
 
@@ -100,10 +136,8 @@ What you write, and what you do not:
 - You write the summary line, the segments between the intro and the outro, and the show notes for those segments. The intro, the outro, the cost figures, the credit and contact lines, and their show notes are added by code. Never write an Intro or Outro segment.
 - Use only these segment headings, in this order, and omit any segment with nothing in it: {segments}.
 - Every item must come from the changelog entries you are given. Never add products, features, dates, numbers, or claims that are not in them. If an entry is ambiguous, say less rather than guess.
-- Stay high level: what changed, why it matters to someone building on Deepgram, and which docs page to read. Two to four sentences per item. No method names, parameter lists, or code. No commentary on how Deepgram shipped or documented something.
-- A docs correction is never a breaking change. It goes under Developer experience.
-- Many weeks are mostly Nova-3 language updates. Collapse them into one or two quick-hit sentences that name the languages briefly and say whether a code change is needed.
-- Handoffs follow the spec: the outgoing voice ends its segment with "{{Voice}} has the {{segment}} updates next." (for Launches: "Drew has this week's launches."), the incoming desk voice opens with "Thanks, {{previous voice}}.", and a desk voice handing back to the anchor ends with "Back to you, Brooke." The voices are fixed by the cast, so a handoff always names the voice that owns the next segment you actually include. The last segment before the outro must end with a handoff to Brooke if a desk voice speaks it. If Brooke speaks the last segment, it needs no handoff.
+- Stay high level: what changed, why it matters to {audience}, and which docs page to read. Two to four sentences per item. No method names, parameter lists, or code. No commentary on how {product} shipped or documented something.
+{rules}- Handoffs follow the spec: the outgoing voice ends its segment with "{{Voice}} has the {{segment}} updates next." (for Launches: "{launches_voice} has {launches_phrase}."), the incoming desk voice opens with "Thanks, {{previous voice}}.", and a desk voice handing back to the anchor ends with "Back to you, {anchor}." The voices are fixed by the cast, so a handoff always names the voice that owns the next segment you actually include. The last segment before the outro must end with a handoff to {anchor} if a desk voice speaks it. If {anchor} speaks the last segment, it needs no handoff.
 - The first segment you include opens with "First up," per the spec. The anchor's own segments use the spec's openers.
 - Write numbers, versions, and identifiers the way they should be spoken ("version zero point ten", "TTL" in caps, "V2" for version two). Avoid spelling out hard identifiers at all.
 - Refer to time relative to the episode's own week ("this week", "last month"), as of the release date. Never mention anything after the week you are covering.
@@ -252,12 +286,15 @@ def assemble(raw: str, release: date, start: date, end: date, entries: list[dict
         what = LAUNCHES[CADENCE.name] if heads[0] == 'Launches' else f'the {SPOKEN_SEGMENT.get(heads[0], heads[0].lower())} updates'
         intro_handoff = f" {first['name']} kicks us off with {what}."
     last_voice = cast['segments'].get(last, cast['anchor'])['name']
-    promo = PROMO_START <= release <= PROMO_END
+    promo = bool(PROMO) and PROMO_START <= release <= PROMO_END
     thanks = '' if last_voice == cast['anchor']['name'] else f'Thanks, {last_voice}. '
     outro = [thanks + OUTRO_COST] + ([OUTRO_PROMO] if promo else []) + [OUTRO_HELP]
     canned = dict(CANNED_NOTES)
     if promo:
-        canned['Credits and pricing'] = canned['Credits and pricing'][:1] + [PROMO_NOTE] + canned['Credits and pricing'][1:]
+        if PROMO_NOTE:
+            sec = PROMO.get('note_section') or 'Credits and pricing'
+            links = canned.get(sec, [])
+            canned[sec] = links[:1] + [PROMO_NOTE] + links[1:]
     canned_md = '\n\n'.join(f'**{k}**\n\n' + '\n'.join(f'- [{a}]({b})' for a, b in v) for k, v in canned.items())
     source = '\n'.join(f"- {it['date']}: {it['title']} ({it['url']})" for it in entries)
     return f"""# {SHOW['name']}, {PERIOD_OF[CADENCE.name]} {start.isoformat()} to {end.isoformat()}
@@ -298,10 +335,15 @@ Source entries:
 
 
 def build_prompts(release: date, start: date, end: date, entries: list[dict], cast: dict) -> tuple[str, str]:
-    """The exact system and user prompts for one episode. Shared with estimate_writer_cost.py."""
+    """The exact system and user prompts for one episode."""
     system = SYSTEM.format(
         show=SHOW['name'],
         cadence=CADENCE.adjective,
+        source=WRITER['source'], listeners=WRITER['listeners'], audience=WRITER['audience'], product=WRITER['product'],
+        rules=''.join(f'- {r}\n' for r in WRITER.get('rules') or []),
+        anchor=cast['anchor']['name'],
+        launches_voice=cast['segments'].get('Launches', cast['anchor'])['name'],
+        launches_phrase=LAUNCHES[CADENCE.name],
         spec=(ROOT / 'docs' / 'show-format.md').read_text(),
         cast=json.dumps(cast, indent=2),
         example=(ROOT / 'docs' / 'example-episode.md').read_text().split("## Writer's notes")[0],
@@ -309,8 +351,7 @@ def build_prompts(release: date, start: date, end: date, entries: list[dict], ca
     )
     entry_text = '\n\n'.join(f"<entry date=\"{it['date']}\" url=\"{it['url']}\">\n## {it['title']}\n{it['body'].strip()}\n</entry>"
                              for it in entries)
-    launch_block = ('Treat an entry as a launch only if it introduces a new model, product, or API, or announces '
-                    'general availability of one. Regional endpoints and self-hosted releases are quick hits.')
+    launch_block = WRITER['launch_rule']
     user = USER.format(release=release.isoformat(), release_spoken=spoken_day(release), release_day=CADENCE.day_name,
                        start=start.isoformat(), end=end.isoformat(), entries=entry_text,
                        launch_block=launch_block)

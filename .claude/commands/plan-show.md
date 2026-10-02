@@ -33,11 +33,18 @@ Work through these in order and show me the results as you go:
 7. Propose a cast from the Flux TTS voices at https://developers.deepgram.com/docs/flux-tts/overview:
    one anchor, plus a voice for Launches and for each product segment. The anchor reads Breaking
    changes and Quick hits.
-8. Draft a canned intro line and outro for this show, in the style of the ones in
-   scripts/write_episode.py, with the product's own support links in place of Deepgram's.
-9. List what's left to edit by hand after show.json and docs/cast.json: the outro and canned show
-   notes in scripts/write_episode.py, the writer's brief there, docs/show-format.md, and the hard
-   words for docs/key-terms.json.
+8. Draft this show's `writer` and `outro` blocks for show.json, in the shape of the Deepgram ones
+   already there:
+   - `writer`: `source` (whose changelog, like "the Tailscale changelog"), `listeners`, `audience`
+     (who an item matters to, like "someone running Tailscale"), `product`, any extra `rules` for
+     this feed's quirks, and `launch_rule` (what counts as a launch here).
+   - `outro`: `cost` (keep the sentence "rendering it cost thirty cents, at the pay as you go
+     rate"; the real figure is filled in per episode), `pitch` (null, unless the show has a
+     product to pitch), `promo` (null), `help` (the product's real support, community, and status
+     channels, written to be spoken, like "status dot tailscale dot com"), and `notes` (the same
+     channels as show-note links). Only use links you found on the product's site.
+9. List what's left to edit by hand after show.json and docs/cast.json: docs/show-format.md (the
+   writer's format spec) and the hard words for docs/key-terms.json.
 
 Don't edit any files or make any paid API calls yet. Steps 2 and 3 are free; they only read the
 feed.
@@ -60,10 +67,12 @@ just say yes.
 6. `segments`: show the product segments from step 6 as a short table (name, label, keywords) and
    ask whether to use them as is.
 7. The cast from step 7: ask whether to use it as is.
+8. The `writer` and `outro` from step 8: show the spoken help line and ask whether to use them as
+   is.
 
 Fill `changelog_url` and `feed_url` from step 1 without asking. Leave `site_url`, `cadence`,
 `release_day`, and `attribution` as they are; the quickstart offers the cadence change itself.
-Then write show.json, replacing its `segments` block with the new launch keywords and product
+Then write show.json, replacing its `writer` and `outro` blocks with the ones from step 8 and its `segments` block with the new launch keywords and product
 segments (keep the breaking-change rules, and drop Deepgram's quick-hits and roll-up patterns
 unless they fit). Write docs/cast.json with the new anchor and one entry per segment name, keeping
 its `expressivity`. Touch nothing else.

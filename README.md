@@ -164,28 +164,24 @@ and no more than a fifth of episodes would be empty. Measured on 2026-10-01:
 
 ### What Else To Change
 
-`show.json` covers the name, the links, the feed, and the art. A few things are still written for
-Deepgram's show and live in code:
+`/plan-show` and `/start` fill in everything below except the last two items. These are the
+places a fork's show gets its own voice:
 
-- **The outro.** `OUTRO_COST`, `OUTRO_PROMO`, `OUTRO_HELP`, `PROMO_START` and `PROMO_END`, and
-  `CANNED_NOTES` in `scripts/write_episode.py`. These are the spoken credits, promo, and support
-  lines at the end of every episode, so point them at your own channels.
-- **The writer's brief.** The `SYSTEM` prompt in `scripts/write_episode.py` describes a Deepgram
-  docs audience. Edit it to describe yours.
+- **The outro and the writer's brief.** `outro` in `show.json` holds the spoken credit, pitch,
+  promo, and support lines and their show-note links, and `writer` says whose changelog it is and
+  who it's for. `/plan-show` drafts both from the product's own site. Keep the outro's "rendering it
+  cost ..." and "covers more than ... episodes" phrases if you want the real figures filled in.
 - **The segments.** `segments` in `show.json` holds the product segments that come after the fixed
   three (Breaking changes and action required, Launches, and Quick hits), each with a back catalog
   label, a spoken name, and a keyword pattern, plus the patterns for launches and quick hits.
   `/plan-show` proposes them from your feed and checks how entries sort. The rules are in
   `scripts/segments.py`, and `python3 scripts/backfill_plan.py` shows the result for free.
-- **The cast.** `docs/cast.json` has the anchor and one voice per segment, keyed by segment name
-  (`/plan-show` writes it). Put your product's hard
-  words in `docs/key-terms.json` and run `python3 scripts/term_test.py --voice <voice>` once per
-  voice, since pronunciation varies by voice.
-- **The format spec.** `docs/show-format.md` is what the writer follows, and it names Deepgram's
-  show throughout.
-- **The page chrome.** The header eyebrow ("deepgram · Flux TTS demo") and the footer's Discord
-  and GitHub Discussions links are in `web/index.html`, `web/episode.html`, and
-  `web/back-catalog.html`.
+- **The cast.** `docs/cast.json` has the anchor and one voice per segment, keyed by segment name.
+- **Pronunciation (by hand).** Put your product's hard words in `docs/key-terms.json` and run
+  `python3 scripts/term_test.py --voice <voice>` once per voice, since pronunciation varies by
+  voice. This makes paid TTS and STT calls.
+- **The format spec (by hand).** `docs/show-format.md` is the writer's style guide, and its
+  examples name Deepgram's show throughout.
 
 ### Credit Line
 
@@ -262,61 +258,11 @@ The site's look comes from [HN Radio](https://github.com/samgutentag-deepgram/hn
 `web/brand.css`, `theme.js`, `orb.js`, `format.js`, and the icons verbatim from its `web/` so they
 can be re-synced. Anything specific to this show goes in `web/readback.css`.
 
-## Tuesday Mornings
+## Deploy It
 
-The show runs on one Fly machine in the `deepgram` org, at
-[dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-changelog.fly.dev).
-
-At 5am Pacific every morning, the machine's own cron (supercronic, reading `crontab`) runs
-`scripts/weekly_run.py`. It exits at once unless today is a release date for the show's cadence,
-which for this show means Tuesdays. On a release date it wraps `scripts/produce.py --weekly`, which
-refreshes the changelog and writes, renders, checks, and illustrates the episode for the Sunday to
-Saturday that just ended. It
-then rebuilds the feed and the back catalog on the volume, so there's nothing to deploy. A failed
-run retries up to three times, five minutes apart. Set `CHANGELOG_PUSHOVER_TOKEN` and
-`CHANGELOG_PUSHOVER_USER` (see `.env.sample`) to get a push for each retry and for the result.
-
-A week with no changelog entries gets no episode. Each run also re-checks about four weeks of
-earlier releases (four weekly, two biweekly, or one monthly), so an entry that shows up late still
-gets an episode.
-
-Every run leaves a record on the volume at `/data/runs/<UTC stamp>/`: a timestamped `run.log`, the
-catalog before and after, the feed after, the new episode's `produce.json`, and a `summary.json`
-with the exit code. To list and pull them:
-
-```bash
-fly ssh console -a dg-devrel-deepgram-changelog -C "ls /data/runs"
-fly ssh sftp get -a dg-devrel-deepgram-changelog /data/runs/<stamp>/run.log .
-```
-
-To deploy your own:
-
-1. **Set the site.** Put your public URL in `show.json` `site_url` and in `[env]` in `fly.toml`,
-   and rename `app` in `fly.toml`.
-2. **Set the keys.** `fly secrets set DEEPGRAM_API_KEY=... ANTHROPIC_API_KEY=...`
-3. **Pick your morning.** `crontab` runs at 5am Pacific. Change `CRON_TZ` if that isn't yours.
-   The day comes from `release_day` in `show.json`, so the crontab doesn't change with it.
-4. **Ship it.** `python3 scripts/backfill_plan.py --refresh`, then
-   `python3 scripts/stage_site.py && fly deploy --remote-only --ha=false`.
-
-Episodes you render locally ship inside the image as `seed/episodes`, and the machine copies them
-onto the volume when it boots (`seed_volume.py`). A newer local render replaces the volume copy.
-Episodes the cron made only exist on the volume. Locally, set `ART_PYTHON` if your default Python
-doesn't have Pillow.
-
-**Storage:** an episode takes about 1.5 MB on the volume (a 64 kbps MP3 plus art and JSON). All 141
-use about 175 MB of the 1 GB volume, and new weeks add roughly 75 MB a year. The server deletes its
-raw paragraph audio (`.cache/tts`) after each run. Locally it's kept, so editing a script only
-re-renders the paragraphs you changed.
-
-Each `script.md` carries writer's notes, so the deploy leaves it out. `serve.py` only serves an
-allowlist of public file names from the episodes directory.
-
-**Cost:** going by the 141 episodes on the live
-[back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog), an episode is about 10
-cents of Flux TTS and 9 cents of Claude. That's roughly 20 cents a week, or about $10 for a year of
-Tuesdays. A backfill costs the same per episode, so check the week count in
-`research/backfill-review.html` first.
+The live show runs on one [Fly](https://fly.io) machine that wakes up every morning, makes an
+episode on release dates, and needs no deploy to publish. [`docs/deploy.md`](docs/deploy.md)
+covers how that works, the run logs it keeps, and the four steps to deploy your own.
 
 ## Where The Entries Come From
 
@@ -353,7 +299,7 @@ markdown body per day, where each `## ` heading is one entry. The picture versio
   show won't mention it. The fix for that belongs in the changelog.
 - **Expressivity is a beta Flux TTS setting.** Every voice runs at 1. Give it a listen after a Flux
   model update.
-- **A fork starts with Deepgram's outro.** `/plan-show` sets the segments and the cast, but the
-  spoken credits, support lines, and the writer's brief in `scripts/write_episode.py` still
-  describe Deepgram's show until you change them. [What Else To Change](#what-else-to-change)
-  lists where they live.
+- **A fork still has Deepgram's format spec and pronunciation list.** `docs/show-format.md` and
+  `docs/key-terms.json` describe Deepgram's show and its hard words. The writer follows the
+  segments, cast, writer brief, and outro in `show.json` first, but the spec's examples still lean
+  Deepgram until you edit it.

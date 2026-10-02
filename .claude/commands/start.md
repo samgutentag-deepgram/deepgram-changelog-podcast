@@ -67,7 +67,7 @@ Ground rules for the whole walkthrough:
    tell me to watch the back catalog fill in, and show the report when it's done.
 
 9. **Wrap up.** Tell me, briefly: the site keeps running until I stop it; `python3
-   scripts/quickstart.py --more` renders more later; the first episodes still use Deepgram's
-   segments and outro, and the README's "What Else To Change" section, or `/plan-show`'s list of
-   edits, covers making them this show's own; and the README's "Tuesday Mornings" section covers
-   deploying it so it publishes on its own.
+   scripts/quickstart.py --more` renders more later; the show's name, segments, cast, cadence,
+   writer brief, and outro are all set, but the pronunciation list (`docs/key-terms.json`) and the
+   writer's format spec (`docs/show-format.md`) are still Deepgram's, and the README's "What Else To
+   Change" section covers them; and `docs/deploy.md` covers deploying it so it publishes on its own.

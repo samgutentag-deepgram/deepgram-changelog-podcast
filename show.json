@@ -52,6 +52,64 @@
       }
     ]
   },
+  "_writer": "What the writer is told: whose changelog it reads (source), who listens (listeners), why an item matters to whom (audience), whose product it is, extra rules, and what counts as a launch.",
+  "writer": {
+    "source": "the Deepgram developer changelog",
+    "listeners": "developers",
+    "audience": "someone building on Deepgram",
+    "product": "Deepgram",
+    "rules": [
+      "A docs correction is never a breaking change. It goes under Developer experience.",
+      "Many weeks are mostly Nova-3 language updates. Collapse them into one or two quick-hit sentences that name the languages briefly and say whether a code change is needed."
+    ],
+    "launch_rule": "Treat an entry as a launch only if it introduces a new model, product, or API, or announces general availability of one. Regional endpoints and self-hosted releases are quick hits."
+  },
+  "_outro": "The spoken outro, after a cadence wrap-up ('That's the week.'). In cost, keep 'rendering it cost ..., at the pay as you go rate'; in pitch, keep 'covers more than ... episodes like this one': fill_cost.py writes the real figures there. Set pitch or promo to null to drop them. help is the support line, and 'See you next Tuesday!' (per cadence) is added after it. notes are the outro's show-note links.",
+  "outro": {
+    "cost": "This episode was voiced start to finish by Deepgram Flux TTS, and rendering it cost thirty cents, at the pay as you go rate.",
+    "pitch": "Looking to start building with Deepgram? New Console accounts start with a two hundred dollar credit, which covers more than one thousand episodes like this one.",
+    "promo": {
+      "start": "2026-09-15",
+      "end": "2026-12-31",
+      "text": "As a bonus through December thirty first of this year, every dollar you spend on Flux TTS is matched with a dollar in bonus credits, up to five hundred dollars per project. What you earn never expires, and it works on any Deepgram API in that project. It's open to Pay As You Go and Growth projects, and the full terms are in the show notes.",
+      "note": [
+        "Flux TTS credit match terms",
+        "https://deepgram.com/promotions/2026-09/flux-tts-promo-terms-and-conditions"
+      ],
+      "note_section": "Credits and pricing"
+    },
+    "help": "Need more help, or have questions about anything in today's episode? Email support at deepgram dot com and include the dg request ID header from the failing response, it's the fastest way to get a fix. For questions and a second pair of eyes, find us on Discord at D P G R dot A M slash discord, or in GitHub Discussions under the Deepgram org. If you think something's down, check status dot deepgram dot com first. The full changelog can be found at developers dot deepgram dot com slash changelog.",
+    "notes": {
+      "Credits and pricing": [
+        [
+          "Deepgram pricing",
+          "https://deepgram.com/pricing"
+        ],
+        [
+          "Sign up for Console",
+          "https://console.deepgram.com"
+        ]
+      ],
+      "Get in touch": [
+        [
+          "Discord",
+          "https://dpgr.am/discord"
+        ],
+        [
+          "GitHub Discussions",
+          "https://github.com/orgs/deepgram/discussions"
+        ],
+        [
+          "status.deepgram.com",
+          "https://status.deepgram.com"
+        ],
+        [
+          "support@deepgram.com",
+          "mailto:support@deepgram.com"
+        ]
+      ]
+    }
+  },
   "_attribution": "A 'Voiced with Deepgram Flux TTS' credit in the site footer and the feed description. Set it to false to remove both.",
   "attribution": true
 }

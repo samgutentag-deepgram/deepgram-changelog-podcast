@@ -29,7 +29,12 @@ def under_100(n: int) -> str:
 
 
 def spoken_count(n: int) -> str:
-    # Said the way a person would: 1,175 is "eleven hundred seventy five", 2,000 is "two thousand".
+    # Said the way a person would: 1,175 is "eleven hundred seventy five", 2,000 is "two thousand",
+    # 12,300 is "twelve thousand three hundred". A very short episode can cross ten thousand.
+    if n >= 10000:
+        thousands, rest = divmod(n, 1000)
+        head = (spoken_count(thousands) if thousands >= 100 else under_100(thousands)) + ' thousand'
+        return head + (' ' + spoken_count(rest) if rest else '')
     if n % 1000 == 0 and n >= 1000:
         return under_100(n // 1000) + ' thousand'
     hundreds, rest = divmod(n, 100)
@@ -48,8 +53,10 @@ def spoken_cost(usd: float) -> str:
 def main() -> None:
     path = Path(sys.argv[1]) / 'script.md'
     text = path.read_text()
-    if not COST_RE.search(text) or not COUNT_RE.search(text):
-        sys.exit('outro cost or credit sentence not found')
+    if not COST_RE.search(text) and not COUNT_RE.search(text):
+        # A show whose outro (show.json "outro") says no cost or credit figures has nothing to fill.
+        print('no cost or credit sentence in the outro, nothing to fill')
+        return
     for _ in range(8):
         chars = sum(len(spoken_form(p)) for _, ps in parse_segments(text) for p in ps)
         usd = chars / 1000 * RATE_USD_PER_1K
