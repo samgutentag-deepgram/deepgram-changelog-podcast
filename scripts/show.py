@@ -30,6 +30,30 @@ ATTRIBUTION_TEXT = 'Voiced with Deepgram Flux TTS'
 ATTRIBUTION_URL = 'https://deepgram.com/product/text-to-speech'
 
 
+def load_env(path: Path = ROOT / '.env') -> None:
+    """Read .env into the environment without overriding anything already set. Every script imports
+    this module, so each one finds the keys on its own, with no `set -a` step and no wrapper."""
+    try:
+        lines = path.read_text().splitlines()
+    except OSError:
+        return
+    for line in lines:
+        line = line.strip()
+        if not line or line.startswith('#') or '=' not in line:
+            continue
+        key, value = line.split('=', 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def write_atomic(path: Path, text: str) -> None:
+    """Write a file other processes may be reading, or writing too: renders that run side by side
+    all rebuild the same catalog, feed, and index. Each writer gets its own temp file and swaps it
+    in whole, so nobody reads half a file and two writers never share a temp."""
+    tmp = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
+    tmp.write_text(text)
+    tmp.replace(path)
+
+
 def load(path: Path = ROOT / 'show.json') -> dict:
     try:
         data = json.loads(path.read_text())
@@ -56,4 +80,5 @@ def attribution_url(site_url: str, placement: str = 'footer') -> str:
     return f'{ATTRIBUTION_URL}?{query}'
 
 
+load_env()
 SHOW = load()

@@ -18,6 +18,9 @@ Ground rules for the whole walkthrough:
   carry on from it. Offer to run it for me instead if I'd rather.
 - Run Python through the virtual environment directly (`.venv/bin/python ...`), so nothing depends
   on an activated shell.
+- Render only through `scripts/quickstart.py` (`--first-only`, then `--render N`). It already
+  renders several episodes at once, prints the time and token report, and rebuilds the site once.
+  Don't call `produce.py` yourself and don't split renders across subagents.
 - Keep each message short: what just happened, then the one thing you need from me.
 
 1. **Say what's going to happen**, in three or four sentences: this turns an RSS or Atom feed into

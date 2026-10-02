@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from email.utils import format_datetime
 from pathlib import Path
 
-from show import ATTRIBUTION_TEXT, SHOW
+from show import ATTRIBUTION_TEXT, SHOW, write_atomic
 from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -102,10 +102,10 @@ def main() -> None:
   </channel>
 </rss>
 """
-    (EPISODES / 'feed.xml').write_text(feed)
+    write_atomic(EPISODES / 'feed.xml', feed)
     # The site's episode list, folded here too so parallel renders cannot leave it stale.
     keys = ('id', 'title', 'summary', 'window', 'host', 'hosts', 'duration_seconds')
-    (EPISODES / 'index.json').write_text(json.dumps(
+    write_atomic(EPISODES / 'index.json', json.dumps(
         {'episodes': [{k: e.get(k) for k in keys} for e, _ in eps]}, indent=2) + '\n')
     print(f'wrote episodes/feed.xml with {len(eps)} episode(s) for {base}')
 

@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from cadence import CADENCE  # noqa: E402
+from show import write_atomic  # noqa: E402
 from segments import SEGMENTS as _NAMES, SHORT  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -178,11 +179,7 @@ def main() -> None:
 
     catalog = build(episodes_dir, args.plan)
     out = episodes_dir / 'catalog.json'
-    tmp = out.with_suffix('.json.tmp')
-    tmp.write_text(json.dumps(catalog, indent=1) + '\n')
-    # The page polls this file while episodes render, so swap it in whole rather than let a
-    # reader catch it half-written.
-    tmp.replace(out)
+    write_atomic(out, json.dumps(catalog, indent=1) + '\n')
     t = catalog['totals']
     print(f"{t['episodes']} episodes, {t['published']} published, ${t['cost_usd_published']:.4f} spent. Wrote {out}")
 

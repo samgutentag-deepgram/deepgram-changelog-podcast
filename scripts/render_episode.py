@@ -29,7 +29,7 @@ from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from show import SHOW  # noqa: E402
+from show import SHOW, write_atomic  # noqa: E402
 from cadence import CADENCE  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -301,7 +301,7 @@ def write_site_data(ep: Path, script_md: str, rows, chapters, duration, chars, u
                 continue
             listing.append({k: e.get(k) for k in
                             ('id', 'title', 'summary', 'window', 'host', 'duration_seconds')})
-    (EPISODES / 'index.json').write_text(json.dumps({'episodes': listing}, indent=2) + '\n')
+    write_atomic(EPISODES / 'index.json', json.dumps({'episodes': listing}, indent=2) + '\n')
 
 
 def write_vtt(ep: Path, rows, duration: float) -> None:

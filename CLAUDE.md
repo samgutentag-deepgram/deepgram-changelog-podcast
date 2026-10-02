@@ -27,6 +27,10 @@ The README's "Steps" section is the same flow done by hand.
 - **The quickstart asks questions on a terminal.** To drive it from here, use its unattended flags:
   `--check`, `--cadence keep|recommended|weekly|biweekly|monthly`, `--first-only`, and
   `--render N`. Long renders belong in the background.
+- **Render through the quickstart, in one process.** `--render N` runs several episodes at once
+  (`produce.py --jobs 3` underneath) and prints the time and token report. Don't run `produce.py`
+  per episode in parallel, and don't use subagents for renders: one process is already parallel,
+  and the report only comes from the quickstart.
 - **Use the virtual environment** at `.venv` (`.venv/bin/python`), created with
   `python3 -m venv .venv && .venv/bin/pip install anthropic pillow`.
 - **Don't deploy, push, or delete episodes** unless the person asks.
