@@ -80,14 +80,22 @@ answer (the show's name, the cadence, how many episodes to pay for). Ask them.
    Use your own feed's URL. It reads the feed for free, recommends a cadence, and proposes show
    names, segments, a cast, and an intro and outro, without editing anything. When you pick a name,
    it fills in `show.json` (the name, the two lines drawn on the art, the description, and the
-   links) and tells you to run the quickstart. Then exit Claude Code.
+   links) and tells you to run the quickstart. The quickstart asks questions as it goes, so run it
+   in a second terminal tab, not from inside Claude Code. You can leave Claude Code open.
+
+   It asks for each `show.json` field one at a time. `author` and `owner_email` only go in the
+   podcast feed: apps show the author as "by ..." under the name, and Apple Podcasts and Spotify
+   send their verification email to the owner address, which anyone reading the feed can see. For
+   a show about someone else's product, put yourself (or your team) as the author, not the
+   product. For a local test, any email works.
 
    The command is a prompt in [`.claude/commands/plan-show.md`](.claude/commands/plan-show.md).
    Without Claude Code, read it and fill in `show.json` by hand.
 
-5. **Run the quickstart.**
+5. **Run the quickstart** in a terminal, with the virtual environment active.
 
    ```bash
+   source .venv/bin/activate
    python3 scripts/quickstart.py
    ```
 

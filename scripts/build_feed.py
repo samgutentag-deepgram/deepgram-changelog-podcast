@@ -23,11 +23,11 @@ from cadence import CADENCE
 
 ROOT = Path(__file__).resolve().parent.parent
 EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
-TITLE = SHOW['name']
+TITLE = html.escape(SHOW['name'])
 DESCRIPTION = SHOW['description'] + (
     '' if not SHOW['attribution'] or 'Flux TTS' in SHOW['description'] else f' {ATTRIBUTION_TEXT}.')
-AUTHOR = SHOW['author']
-OWNER_EMAIL = SHOW['owner_email']
+AUTHOR = html.escape(SHOW['author'])
+OWNER_EMAIL = html.escape(SHOW['owner_email'])
 RELEASE_HOUR_UTC = 16  # Tuesday 9am Pacific
 
 

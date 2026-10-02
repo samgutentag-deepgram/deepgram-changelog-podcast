@@ -35,11 +35,28 @@ Work through these in order and show me the results as you go:
 Don't edit any files or make any paid API calls yet. Steps 2 and 3 are free; they only read the
 feed.
 
-When I pick a name, update show.json only: `name`, `wordmark` (two strings, a small line and a
-big line, drawn on the art), `description` (one or two sentences: what the show reads, and that
-it's voiced by Deepgram Flux TTS), `author`, `owner_email` (ask me for these two if you don't know
-them), `changelog_url`, and `feed_url`. Leave `site_url`, `cadence`, `release_day`, and
-`attribution` as they are. The quickstart offers the cadence change itself.
+When I pick a name, fill in show.json by asking me for each field one at a time. Ask one
+question, wait for my answer, then ask the next. Suggest a default with each question so I can
+just say yes.
 
-Then tell me the next step: exit Claude Code and run `python3 scripts/quickstart.py` with the
-virtual environment active (`source .venv/bin/activate`).
+1. `name`: the show name I picked.
+2. `wordmark`: the two lines drawn on the art, a small one and a big one. Suggest a split of the
+   name.
+3. `description`: one or two sentences on what the show reads and how often, ending with "Voiced by
+   Deepgram Flux TTS." Suggest one.
+4. `author`: the person or team making the show. Podcast apps show it as "by ..." under the name.
+   For a show about someone else's product, suggest my own name, not the product's, so it doesn't
+   read as their official podcast.
+5. `owner_email`: it goes in the podcast feed, where anyone can read it, and Apple Podcasts and
+   Spotify send their verification email there if I submit the show. For a local test any
+   placeholder works. For a real show, suggest a shared team address over a personal one.
+
+Fill `changelog_url` and `feed_url` from step 1 without asking. Leave `site_url`, `cadence`,
+`release_day`, and `attribution` as they are; the quickstart offers the cadence change itself.
+Then write show.json, touching nothing else, and show me the fields you set.
+
+Finally, tell me the next step. The quickstart asks questions as it goes, so it has to run in a
+terminal, not from inside this session. Open a second terminal tab in the repo and run
+`source .venv/bin/activate && python3 scripts/quickstart.py`. This session can stay open for the
+step 9 edits later. The first episode still uses Deepgram's segments and outro until those edits
+are made. That's expected for a first look, so it doesn't need to wait on them.
