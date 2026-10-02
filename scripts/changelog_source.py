@@ -26,6 +26,8 @@ from __future__ import annotations
 import hashlib
 import os
 import re
+import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import date, datetime
 from email.utils import parsedate_to_datetime
@@ -46,9 +48,18 @@ Entry = tuple[date, str, str]  # (day, markdown body, public URL for that day)
 
 
 def fetch(url: str) -> str:
-    req = urllib.request.Request(url, headers={'User-Agent': 'changelog-podcast/1.0'})
-    with urllib.request.urlopen(req, timeout=60) as r:
-        return r.read().decode()
+    # urllib only follows 308 from Python 3.11 on, and some changelogs (Vercel's) answer with one,
+    # so follow it here for the 3.9 and 3.10 this repo supports.
+    for _ in range(5):
+        req = urllib.request.Request(url, headers={'User-Agent': 'changelog-podcast/1.0'})
+        try:
+            with urllib.request.urlopen(req, timeout=60) as r:
+                return r.read().decode()
+        except urllib.error.HTTPError as e:
+            if e.code != 308 or not e.headers.get('Location'):
+                raise
+            url = urllib.parse.urljoin(url, e.headers['Location'])
+    raise RuntimeError(f'too many redirects fetching {url}')
 
 
 def load_entries(refresh: bool = False) -> list[Entry]:
@@ -169,6 +180,20 @@ def _day(value: str) -> date | None:
         return None
 
 
+def _atom_html(el) -> str:
+    """Atom content as HTML. type="xhtml" puts the post in child elements rather than text
+    (Vercel's feed does this), so serialize the children instead of reading .text."""
+    if el is None:
+        return ''
+    if el.get('type') == 'xhtml':
+        out = ''.join(ET.tostring(child, encoding='unicode') for child in el)
+        # ElementTree writes the XHTML namespace as a tag prefix (<html:p>); the HTML parser
+        # downstream only knows bare tags, so drop the prefixes and the declarations.
+        out = re.sub(r'(</?)[A-Za-z0-9_]+:', r'\1', out)
+        return re.sub(r'\s+xmlns(:[A-Za-z0-9_]+)?="[^"]*"', '', out)
+    return el.text or ''
+
+
 def from_feed(feed_url: str, refresh: bool) -> list[Entry]:
     cached = CACHE / 'feed.xml'
     if refresh or not cached.exists():
@@ -180,7 +205,7 @@ def from_feed(feed_url: str, refresh: bool) -> list[Entry]:
         raw.append((_day(it.findtext('pubDate')), it.findtext('title') or '', html, it.findtext('link') or feed_url))
     for it in root.iter(f"{{{NS['atom']}}}entry"):  # Atom
         link = it.find('atom:link', NS)
-        html = it.findtext('atom:content', namespaces=NS) or it.findtext('atom:summary', namespaces=NS) or ''
+        html = _atom_html(it.find('atom:content', NS)) or _atom_html(it.find('atom:summary', NS))
         when = it.findtext('atom:published', namespaces=NS) or it.findtext('atom:updated', namespaces=NS)
         raw.append((_day(when), it.findtext('atom:title', namespaces=NS) or '', html,
                     link.get('href') if link is not None else feed_url))
