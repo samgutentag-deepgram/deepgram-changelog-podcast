@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Deepgram Changelog: Build your own</title>
+<meta name="description" content="Turn any RSS feed into a multi-voice podcast with Deepgram Flux TTS. How the Deepgram changelog became one, what each episode costs, and how to build your own.">
+<meta property="og:title" content="Turn any RSS feed into a podcast">
+<meta property="og:description" content="Point it at an RSS feed and get a multi-voice podcast, voiced by Deepgram Flux TTS. Here is what it costs and how to build your own.">
+<meta property="og:image" content="https://dg-devrel-deepgram-changelog.fly.dev/media/build-poster.jpg">
+<meta property="og:url" content="https://dg-devrel-deepgram-changelog.fly.dev/build">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/favicon.ico" sizes="32x32">
+<link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="brand.css">
+<link rel="stylesheet" href="readback.css">
+<style>
+  .build-video { display: block; width: 100%; height: auto; margin: 1.4rem 0 0.4rem;
+    border: 1px solid var(--dg-border); border-radius: var(--dg-shape-panel); background: #000; }
+  .build-steps { padding-left: 1.3rem; max-width: 40rem; }
+  .build-steps li { margin: 0 0 0.75rem; }
+  .build-steps .build-code { margin: 0.5rem 0 0; }
+  .build-steps strong { color: var(--dg-text-primary); }
+  .build-code { margin: 0.8rem 0 1rem; padding: 0.9rem 1rem; overflow-x: auto;
+    border: 1px solid var(--dg-border); border-radius: var(--dg-shape-panel);
+    background: var(--dg-bg-overlay); font-size: 0.78rem; line-height: 1.55; }
+  .build-prompt { font-family: var(--dg-font-mono); font-size: 0.9rem; color: var(--dg-text-primary); }
+  .build-links { padding-left: 1.3rem; }
+  .build-links li { margin: 0 0 0.4rem; }
+  section.build-sec { margin-top: 2.2rem; }
+</style>
+</head>
+<body>
+<header class="masthead">
+  <a class="eyebrow masthead-brand" href="/"><span class="masthead-prefix"><span class="dg">deepgram</span> &middot; </span>The Deepgram Changelog</a>
+  <nav class="site-nav" aria-label="Site">
+    <a href="/">Episodes</a>
+    <a href="/back-catalog">Back catalog</a>
+    <a href="/build" aria-current="page">Build your own</a>
+  </nav>
+  <div class="masthead-chrome">
+    <button id="subscribe-open" type="button" aria-haspopup="dialog">
+      <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor">
+        <path d="M19.199 24C19.199 13.467 10.533 4.8 0 4.8V0c13.165 0 24 10.835 24 24h-4.801zM3.291 17.415c1.814 0 3.293 1.479 3.293 3.295 0 1.813-1.485 3.29-3.301 3.29C1.47 24 0 22.526 0 20.71s1.475-3.294 3.291-3.295zM15.909 24h-4.665c0-6.169-5.075-11.245-11.244-11.245V8.09c8.727 0 15.909 7.184 15.909 15.91z"/>
+      </svg>
+      <span>Subscribe</span>
+    </button>
+    <button id="theme-toggle" type="button" aria-label="Toggle dark mode"></button>
+  </div>
+</header>
+
+<dialog id="subscribe-dialog" aria-labelledby="subscribe-dialog-title">
+  <div class="sd-head">
+    <h2 id="subscribe-dialog-title">Subscribe in your podcast player</h2>
+    <button class="sd-close" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" fill="none"
+           stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18"/>
+      </svg>
+    </button>
+  </div>
+  <p class="sd-note">Opens the app if it is installed. Nothing here leaves your device.</p>
+  <ul id="sd-list" class="sd-list"></ul>
+  <div class="sd-copy">
+    <label for="sd-url">Or paste this feed URL into any player</label>
+    <div class="sd-copy-row">
+      <input id="sd-url" type="text" readonly spellcheck="false">
+      <button id="sd-copy" type="button">Copy</button>
+    </div>
+  </div>
+</dialog>
+
+
+<h1>Turn any RSS feed into a podcast</h1>
+<p class="lede">Point it at an RSS feed and you get a multi-voice podcast, written by Claude and
+voiced by Deepgram Flux TTS. The first show built on it is the Deepgram developer changelog: every
+Tuesday, six voices read the week's entries, and one small server publishes the episode. Here is
+what it costs, how it works, and how to make one from your own feed.</p>
+
+<video class="build-video" controls playsinline preload="metadata" poster="media/build-poster.jpg"
+       width="1920" height="1080">
+  <source src="media/build.mp4" type="video/mp4">
+</video>
+<p class="muted">Every voice in that clip is Flux TTS. <a href="/">Listen to the latest episode</a>.</p>
+
+<section class="cost" aria-labelledby="cost-h">
+  <p class="cost-h" id="cost-h">What it costs, across 141 episodes</p>
+  <div class="cost-figures">
+    <div class="cost-figure cost-figure-money"><span class="cost-value">$0.10</span>
+      <span class="cost-label">Flux TTS per episode, on average</span></div>
+    <div class="cost-figure cost-figure-money"><span class="cost-value">$0.20</span>
+      <span class="cost-label">Per episode all in, with Claude writing the script</span></div>
+    <div class="cost-figure cost-figure-money"><span class="cost-value">$14.57</span>
+      <span class="cost-label">Flux TTS for all 141 episodes, 5.9 hours of audio</span></div>
+    <div class="cost-figure cost-figure-money"><span class="cost-value">$200</span>
+      <span class="cost-label">Free credit every new Deepgram Console account starts with</span></div>
+  </div>
+  <p class="cost-fine">Flux TTS is $0.045 per 1,000 characters on Pay As You Go, which works out to
+  about 4 cents per minute of finished audio. A year of weekly episodes runs about $10 all in.
+  Pricing as of 2026-09-25; see <a href="https://deepgram.com/pricing" target="_blank" rel="noopener">deepgram.com/pricing</a>.</p>
+</section>
+
+<section class="build-sec" aria-labelledby="how-h">
+  <h2 id="how-h">How it works</h2>
+  <ol class="build-steps">
+    <li><strong>Read the feed.</strong> The pipeline pulls the changelog's RSS or Atom feed and turns
+      each day into markdown, one heading per entry. It needs the full post in every item. A feed of
+      teasers gives the writer one sentence per release.</li>
+    <li><strong>Segment it.</strong> Entries are grouped into the window each episode covers and sorted
+      into fixed segments, with breaking changes always first, then launches, quick hits, and one
+      segment per product area.</li>
+    <li><strong>Pick a cadence.</strong> Before the first episode, the feed's last 26 weeks decide how
+      often the show comes out: weekly, every two weeks, or monthly. It picks the fastest one where a
+      typical episode has about two minutes of material. This changelog stays weekly, and a quieter
+      one like Tailscale's goes monthly.</li>
+    <li><strong>Set a delivery date.</strong> Each episode releases on a fixed weekday, the first one
+      at least two days after its window ends. This show covers Sunday to Saturday and releases
+      Tuesday, so Monday is a buffer for late entries. A scheduled job wakes up every morning at 5am
+      Pacific and only does anything on a release date.</li>
+    <li><strong>Write.</strong> Claude turns the entries into a script for those segments. Code checks
+      the script before anything is voiced: segments in order, every link real, no URLs read out
+      loud.</li>
+    <li><strong>Voice.</strong> One Flux TTS request per paragraph. Brooke anchors, and Drew, Kit,
+      Miles, Cole, and Elise each take a product segment and hand off to the next voice.</li>
+    <li><strong>Check.</strong> Deepgram speech-to-text listens back to every episode and compares it
+      to the script. Average word error is 0.29%, and no episode is over 3%.</li>
+    <li><strong>Assemble and publish.</strong> The clips join into one MP3 with chapters and a
+      transcript, the episode gets art drawn from the segments that aired, and it lands on this site,
+      in the podcast feed, and in the back catalog with its own cost receipt.</li>
+  </ol>
+</section>
+
+<section class="build-sec" aria-labelledby="diy-h">
+  <h2 id="diy-h">Build one yourself</h2>
+  <p class="lede">The whole show is open source, and the repo comes with a quickstart. It's built
+  around changelogs, but any RSS or Atom feed with full posts works, and you can have your own show
+  running on your laptop in under half an hour. A quiet week costs about 20 cents to render, and a busy one closer to a
+  dollar.</p>
+  <ol class="build-steps">
+    <li><strong>Get two API keys.</strong> <a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">Deepgram</a>
+      for the voices and the listen-back check (new accounts start with $200 in credit), and
+      <a href="https://console.anthropic.com" target="_blank" rel="noopener">Anthropic</a> for the writer.
+      You also need git, Python 3.9 or newer, and ffmpeg.</li>
+    <li><strong>Clone the repo and install.</strong> The two packages go in a virtual environment.
+      <pre class="build-code">git clone https://github.com/samgutentag-deepgram/deepgram-changelog-podcast.git
+cd deepgram-changelog-podcast
+python3 -m venv .venv
+source .venv/bin/activate
+pip install anthropic pillow
+cp .env.sample .env</pre>
+      Then put both keys in <code>.env</code>.</li>
+    <li><strong>Plan your show with Claude Code.</strong> Run <code>claude</code> in the repo and paste
+      the planning prompt from the README with your feed filled in. It reads your feed for free and
+      proposes a name, segments, and a cast, then fills in <code>show.json</code> once you pick.</li>
+    <li><strong>Run the quickstart.</strong> It checks your setup, recommends a cadence from your
+      feed's history (weekly, every two weeks, or monthly) and offers to switch, renders your newest
+      episode with its own art, and opens your site.
+      <pre class="build-code">python3 scripts/quickstart.py</pre></li>
+    <li><strong>Pick how many more.</strong> It tells you how many more episodes your feed supports
+      and what they'd cost, then asks how many to render. The back catalog page fills in as they
+      land.</li>
+  </ol>
+  <p class="lede">Every step, written so you or your agent can follow it, is in the
+  <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast#steps" target="_blank" rel="noopener">README</a>.</p>
+  <p class="lede">Under the hood, every line in the show is one request like this. Swap the
+  <code>model</code> for a different voice and you have a second host.</p>
+  <pre class="build-code">curl -X POST \
+  "https://api.deepgram.com/v2/speak?model=flux-brooke-en&amp;encoding=linear16&amp;container=none&amp;sample_rate=24000" \
+  -H "Authorization: Token $DEEPGRAM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Kit has the Voice Agent updates next."}' \
+  --output line.raw</pre>
+  <ul class="build-links">
+    <li><a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast" target="_blank" rel="noopener">The repo on GitHub</a>, MIT licensed</li>
+    <li><a href="https://console.deepgram.com/signup" target="_blank" rel="noopener">Get a Deepgram API key</a>, with $200 in free credit</li>
+    <li><a href="https://developers.deepgram.com/docs/flux-tts/overview" target="_blank" rel="noopener">Flux TTS docs</a></li>
+    <li><a href="https://deepgram.com/learn/batch-tts-pipeline-deep-dive" target="_blank" rel="noopener">How the batch pipeline works</a>, from the build behind Hacker News Radio</li>
+    <li><a href="https://dg-devrel-hn-radio.fly.dev" target="_blank" rel="noopener">Hacker News Radio</a>, the same idea pointed at the HN front page</li>
+  </ul>
+</section>
+
+<footer class="page-foot">
+  <a data-show="changelog" href="https://developers.deepgram.com/changelog" target="_blank" rel="noopener">The changelog itself</a>
+  &middot; <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast" target="_blank" rel="noopener">Source on GitHub</a>
+</footer>
+
+<script src="theme.js"></script>
+<script src="subscribe.js"></script>
+</body>
+</html>

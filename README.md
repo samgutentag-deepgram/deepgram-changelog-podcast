@@ -10,7 +10,8 @@ comes in around two.
 
 Listen: [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-changelog.fly.dev) ·
 [podcast feed](https://dg-devrel-deepgram-changelog.fly.dev/episodes/feed.xml) ·
-[back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog)
+[back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog) ·
+[build your own](https://dg-devrel-deepgram-changelog.fly.dev/build)
 
 This repo is the code, not the archive. MP3s are gitignored, so a clone has no audio. The one
 episode in `episodes/` is `2026-09-22`, kept as a worked example with its script, show notes,

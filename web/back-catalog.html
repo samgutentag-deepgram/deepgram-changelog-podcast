@@ -13,7 +13,12 @@
 </head>
 <body>
 <header class="masthead">
-  <p class="eyebrow"><span class="dg">deepgram</span> &middot; <a href="/">The Deepgram Changelog</a></p>
+  <a class="eyebrow masthead-brand" href="/"><span class="masthead-prefix"><span class="dg">deepgram</span> &middot; </span>The Deepgram Changelog</a>
+  <nav class="site-nav" aria-label="Site">
+    <a href="/">Episodes</a>
+    <a href="/back-catalog" aria-current="page">Back catalog</a>
+    <a href="/build">Build your own</a>
+  </nav>
   <div class="masthead-chrome">
     <button id="subscribe-open" type="button" aria-haspopup="dialog">
       <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" fill="currentColor">
@@ -75,10 +80,8 @@ checks show which segments they are expected to have. Hover a check, or open a r
 </div>
 
 <footer class="page-foot">
-  <a href="/">Latest episode</a>
-  &middot; <a href="https://developers.deepgram.com/changelog" target="_blank" rel="noopener">The changelog itself</a>
-  &middot; <a href="https://dpgr.am/discord" target="_blank" rel="noopener">Discord</a>
-  &middot; <a href="https://github.com/orgs/deepgram/discussions" target="_blank" rel="noopener">GitHub Discussions</a>
+  <a data-show="changelog" href="https://developers.deepgram.com/changelog" target="_blank" rel="noopener">The changelog itself</a>
+  &middot; <a href="https://github.com/samgutentag-deepgram/deepgram-changelog-podcast" target="_blank" rel="noopener">Source on GitHub</a>
 </footer>
 
 <script src="theme.js"></script>

@@ -29,7 +29,7 @@ EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
 SERVED = re.compile(r'^(?:feed\.xml|index\.json|catalog\.json|cover\.(?:png|jpg)|'
                     r'[A-Za-z0-9][A-Za-z0-9._-]{0,63}/(?:episode\.(?:mp3|json)|chapters\.json|script\.json|'
                     r'transcript\.vtt|art\.(?:png|jpg)))$')
-PAGES = {'/back-catalog': 'back-catalog.html'}
+PAGES = {'/back-catalog': 'back-catalog.html', '/build': 'build.html'}
 SITE_URL = os.environ.get('SITE_URL', '').rstrip('/')
 SITE_TITLE = SHOW['name']
 # The pages are written with the Deepgram show's name in them, so they read as finished HTML in
@@ -37,6 +37,7 @@ SITE_TITLE = SHOW['name']
 PAGE_NAME = 'The Deepgram Changelog'
 # Checked before the id touches a path, so a separator can never sneak in.
 ID_OK = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
+CHANGELOG_LINK = re.compile(r'data-show="changelog" href="[^"]*"')
 LEDE = re.compile(r'(<p class="lede" id="show-lede">).*?</p>', re.S)
 SHORT = re.compile(r'^/e/([^/?#]+)/?(?:[?#].*)?$')
 
@@ -90,6 +91,8 @@ class Handler(SimpleHTTPRequestHandler):
 
     def send_page(self, page: str, head_only: bool) -> None:
         page = page.replace(PAGE_NAME, html.escape(SITE_TITLE))
+        if SHOW['changelog_url']:
+            page = CHANGELOG_LINK.sub(f'data-show="changelog" href="{html.escape(SHOW["changelog_url"], quote=True)}"', page)
         if SITE_TITLE != PAGE_NAME and SHOW['description']:
             # A renamed show gets its own description in place of the Deepgram show's lede.
             page = LEDE.sub(lambda m: m.group(1) + html.escape(SHOW['description']) + '</p>', page, count=1)

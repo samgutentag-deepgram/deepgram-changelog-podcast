@@ -14,3 +14,4 @@ research/backfill-plan.json
 research/backfill-review.html
 research/cadence.json
 .venv/
+!web/media/*.mp4
