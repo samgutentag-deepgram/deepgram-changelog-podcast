@@ -189,10 +189,11 @@ Deepgram's show and live in code:
 
 ### Credit Line
 
-With `"attribution": true` in `show.json` (the default), the site footer and the feed description
-say "Voiced with Deepgram Flux TTS" and link to Deepgram's text-to-speech page. A fork's episode art
-carries the same line. The link includes your site's hostname as a `utm_source`, so Deepgram can see
-which shows people found it through. Set `"attribution": false` to remove all of it.
+With `"attribution": true` in `show.json` (the default), every page's header says "read by Deepgram
+Flux" under the show name, the footer and the feed description say "Voiced with Deepgram Flux TTS",
+and a fork's episode art carries the same line. Both links go to Deepgram's text-to-speech page,
+tagged with your site's hostname as `utm_source` and which link it was as `utm_content`, so Deepgram
+can see which shows people found it through. Set `"attribution": false` to remove all of it.
 
 ## How It Works
 

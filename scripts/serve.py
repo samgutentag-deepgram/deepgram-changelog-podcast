@@ -38,6 +38,8 @@ PAGE_NAME = 'The Deepgram Changelog'
 # Checked before the id touches a path, so a separator can never sneak in.
 ID_OK = re.compile(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$')
 CHANGELOG_LINK = re.compile(r'data-show="changelog" href="[^"]*"')
+CREDIT_LINK = re.compile(r'data-credit="([a-z]+)" href="[^"]*"')
+MASTHEAD_CREDIT = re.compile(r'\s*<a class="masthead-credit".*?</a>', re.S)
 LEDE = re.compile(r'(<p class="lede" id="show-lede">).*?</p>', re.S)
 SHORT = re.compile(r'^/e/([^/?#]+)/?(?:[?#].*)?$')
 
@@ -96,8 +98,13 @@ class Handler(SimpleHTTPRequestHandler):
         if SITE_TITLE != PAGE_NAME and SHOW['description']:
             # A renamed show gets its own description in place of the Deepgram show's lede.
             page = LEDE.sub(lambda m: m.group(1) + html.escape(SHOW['description']) + '</p>', page, count=1)
+        base = SITE_URL or f'http://{self.headers.get("Host", "localhost")}'
         if SHOW['attribution']:
-            base = SITE_URL or f'http://{self.headers.get("Host", "localhost")}'
+            page = CREDIT_LINK.sub(lambda m: f'data-credit="{m.group(1)}" href="'
+                                   + html.escape(attribution_url(base, m.group(1)), quote=True) + '"', page)
+        else:
+            page = MASTHEAD_CREDIT.sub('', page)
+        if SHOW['attribution']:
             credit = (f'\n  &middot; <a class="credit" href="{html.escape(attribution_url(base), quote=True)}" '
                       f'target="_blank" rel="noopener">{ATTRIBUTION_TEXT}</a>\n</footer>')
             page = page.replace('\n</footer>', credit, 1)

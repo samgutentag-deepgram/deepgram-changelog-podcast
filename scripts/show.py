@@ -47,11 +47,12 @@ def load(path: Path = ROOT / 'show.json') -> dict:
     return show
 
 
-def attribution_url(site_url: str) -> str:
-    """The credit link, tagged with the site it came from so Deepgram can see which shows exist."""
+def attribution_url(site_url: str, placement: str = 'footer') -> str:
+    """The credit link, tagged with the site it came from (and where on the page it sits) so
+    Deepgram can see which shows exist and which link people click."""
     host = urllib.parse.urlparse(site_url).netloc or 'unknown'
     query = urllib.parse.urlencode({'utm_source': host, 'utm_medium': 'podcast-template',
-                                    'utm_campaign': 'changelog-podcast'})
+                                    'utm_campaign': 'changelog-podcast', 'utm_content': placement})
     return f'{ATTRIBUTION_URL}?{query}'
 
 
