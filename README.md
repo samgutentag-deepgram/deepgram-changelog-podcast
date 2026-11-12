@@ -7,7 +7,7 @@ every week, so I built a show that reads its changelog to you. Every Tuesday, Cl
 script, six Deepgram Flux TTS voices perform it, and Deepgram speech-to-text checks every line
 before it ships. Nobody records anything. The same code works on any RSS feed.
 
-There are 141 episodes so far, going back to 2020. They run one to six minutes, and a typical week
+There are over 140 episodes so far, going back to 2020. They run one to six minutes, and a typical week
 comes in around two.
 
 Listen: [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-changelog.fly.dev) ·
@@ -17,21 +17,22 @@ Listen: [dg-devrel-deepgram-changelog.fly.dev](https://dg-devrel-deepgram-change
 
 This repo is the code, not the archive. MP3s are gitignored, so a clone has no audio. The one
 episode in `episodes/` is `2026-09-22`, kept as a worked example with its script, show notes,
-chapters, transcript, and readback report. All 141 episodes live on the site and play from the
+chapters, transcript, and readback report. Every episode lives on the site and plays from the
 links above.
 
 ## What It Costs
 
-Across 141 episodes, Flux TTS averages 10 cents an episode, and about 20 cents all in with Claude
-writing the script. All 141 came to $14.57 of Flux TTS for 5.9 hours of audio. New Deepgram
+Across 146 episodes, Flux TTS averages 11 cents an episode, and about 20 cents all in with Claude
+writing the script. All 146 came to $15.57 of Flux TTS for 6.3 hours of audio. New Deepgram
 Console accounts start with $200 in free credit.
 
 Flux TTS is $0.045 per 1,000 characters on Pay As You Go, which works out to about 4 cents per
-minute of finished audio. A year of weekly episodes runs about $10 all in. Pricing as of
-2026-09-25; see [deepgram.com/pricing](https://deepgram.com/pricing).
+minute of finished audio. A year of weekly episodes runs about $11 all in. Pricing and totals
+checked 2026-11-12; see [deepgram.com/pricing](https://deepgram.com/pricing).
 
 A busy week on a bigger changelog costs more. The first episode of a show built from Claude Code's
-changelog ran almost 16 minutes, took 37 minutes to make, and cost $1.26.
+changelog ran almost 16 minutes, took 37 minutes to make (well past the usual 5 to 25), and cost
+$1.26.
 
 ## Build Your Own
 
@@ -199,6 +200,17 @@ places a fork's show gets its own voice:
   `/plan-show` proposes them from your feed and checks how entries sort. The rules are in
   `scripts/segments.py`, and `python3 scripts/backfill_plan.py` shows the result for free.
 - **The cast.** `docs/cast.json` has the anchor and one voice per segment, keyed by segment name.
+  The voice ids are on the [Flux TTS voices](https://developers.deepgram.com/docs/flux-tts/voices)
+  page. 17 voices have an official Deepgram voice card in `web/brand/avatars/` (Alexis, Bree,
+  Brittany, Brooke, Cliff, Cole, Colin, Gemma, Haley, Hannah, Heather, Kai, Kit, Meena, Miles, Sean,
+  Sienna). A voice without one shows as its initial in the transcript and is left out of the group
+  bubbles on the play button and the art; the host always keeps a seat. Picking carded voices gives
+  a fork the full look.
+- **The build page.** `web/build.html` tells Deepgram's story with Deepgram's numbers and video.
+  Rewrite it for your show or drop it from the nav.
+- **The brand.** The site wears the Deepgram 2026 brand kit (the logo, felt, props, voice cards,
+  and fonts), and `"attribution": false` doesn't remove it. The values live in `web/brand.css`
+  block 0 and the assets in `web/brand/` and `web/fonts/`.
 - **Pronunciation (by hand).** Put your product's hard words in `docs/key-terms.json` and run
   `python3 scripts/term_test.py --voice <voice>` once per voice, since pronunciation varies by
   voice. This makes paid TTS and STT calls.
@@ -207,11 +219,11 @@ places a fork's show gets its own voice:
 
 ### Credit Line
 
-With `"attribution": true` in `show.json` (the default), every page's header says "read by Deepgram
-Flux" under the show name, the footer and the feed description say "Voiced with Deepgram Flux TTS",
-and a fork's episode art carries the same line. Both links go to Deepgram's text-to-speech page,
-tagged with your site's hostname as `utm_source` and which link it was as `utm_content`, so Deepgram
-can see which shows people found it through. Set `"attribution": false` to remove all of it.
+With `"attribution": true` in `show.json` (the default), the footer and the feed description say
+"Voiced with Deepgram Flux TTS", and the show cover and episode art carry the same line. The footer
+link goes to Deepgram's text-to-speech page, tagged with your site's hostname as `utm_source` and
+`utm_content=footer`, so Deepgram can see which shows people found it through. Set
+`"attribution": false` to remove all of it.
 
 ## How It Works
 
@@ -241,7 +253,7 @@ flowchart LR
 | 5. Write | Claude turns the entries into a script for those segments. The intro, outro, cost, and contact lines are fixed text. Code checks the script before anything is voiced: segments in order, every link real, no URLs read out loud. | `scripts/write_episode.py`, `docs/show-format.md` |
 | 6. Voice | One Flux TTS request per paragraph, cached by voice and text. Brooke anchors, and Drew, Kit, Miles, Cole, and Elise each take a product segment and hand off to the next voice. Every voice runs at expressivity 1, and a few words get a spoken spelling first ("change log"). | `scripts/render_episode.py`, `docs/cast.json` |
 | 7. Check | Deepgram speech-to-text listens back to every episode and compares it to the script. A mismatch gets re-rendered up to three times, and the best take wins. Average word error is 0.29%, and no episode is over 3%. | `scripts/readback_check.py` |
-| 8. Assemble and publish | The clips join into one 64 kbps MP3 with chapters and a transcript, the episode gets art drawn from the segments that aired, and it lands on the site, in the podcast feed, and in the back catalog with its own cost receipt. | `scripts/render_episode.py`, `scripts/make_art.py`, `scripts/build_feed.py`, `scripts/build_catalog.py`, `scripts/serve.py` |
+| 8. Assemble and publish | The clips join into one 64 kbps MP3 with chapters and a transcript, the episode gets art (the week's felt, its cast's group bubble, and the segments that aired), and it lands on the site, in the podcast feed, and in the back catalog with its own cost receipt. | `scripts/render_episode.py`, `scripts/make_art.py`, `scripts/build_feed.py`, `scripts/build_catalog.py`, `scripts/serve.py` |
 
 Under the hood, every line in the show is one request like this. Swap the `model` for a different
 voice and you have a second host.
@@ -274,8 +286,6 @@ GitHub shows HTML as source, so open it locally. Images for posts live in
 The quickstart wraps these. Each one works on its own, so any step can be rerun.
 
 ```bash
-set -a; . ./.env; set +a    # the scripts below read keys from the environment, once per shell
-
 python3 scripts/produce.py 2026-09-22                    # one episode, by Tuesday release date
 python3 scripts/produce.py 2026-09-15 2026-09-08 --jobs 3   # several, three at a time
 python3 scripts/produce.py --weekly --dry-run            # what the Tuesday job would make right now
@@ -293,9 +303,11 @@ first.
 MP3, but [localhost:8010/e/2026-09-22](http://localhost:8010/e/2026-09-22) shows the example
 episode's page, show notes, and transcript.
 
-The site's look comes from [HN Radio](https://github.com/samgutentag-deepgram/hn-radio). I copied
-`web/brand.css`, `theme.js`, `orb.js`, `format.js`, and the icons verbatim from its `web/` so they
-can be re-synced. Anything specific to this show goes in `web/readback.css`.
+The site wears the Deepgram 2026 brand kit. `web/brand.css` block 0 holds every color, font, and
+radius; `web/felt.js` picks the week's felt colorway and props; `web/cluster.js` draws each episode's
+cast as a group bubble of voice cards; the assets are in `web/brand/` and the fonts (Work Sans and
+Azeret Mono, OFL) in `web/fonts/`. `web/orb.js` is still loaded for one job, measuring the audio level
+that makes the speaking voice swell. Anything specific to this show goes in `web/readback.css`.
 
 ## Deploy It
 

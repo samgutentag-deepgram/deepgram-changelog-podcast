@@ -30,7 +30,8 @@ Work through these in order and show me the results as you go:
    entries from the last year that would land in it. Also propose `launch_keywords` that match how
    this feed titles launches (for example `\bGA\b|generally available|\bbeta\b|introducing`).
    Read scripts/segments.py for how the rules apply.
-7. Propose a cast from the Flux TTS voices at https://developers.deepgram.com/docs/flux-tts/overview:
+7. Propose a cast from the Flux TTS voices at https://developers.deepgram.com/docs/flux-tts/voices
+   (prefer the 17 with a voice card in web/brand/avatars/, so they show on the play button and art):
    one anchor, plus a voice for Launches and for each product segment. The anchor reads Breaking
    changes and Quick hits.
 8. Draft this show's `writer` and `outro` blocks for show.json, in the shape of the Deepgram ones

@@ -10,7 +10,7 @@ primary_region = "sjc"
   SITE_URL = "https://dg-devrel-deepgram-changelog.fly.dev"
   EPISODES_DIR = "/data/episodes"
 
-# A 64 kbps episode is about 2 MB, so 1 GB holds roughly nine years of weekly episodes. Rendered
+# An episode is about 1.8 MB with its art, so 1 GB holds roughly nine years of weekly episodes. Rendered
 # paragraph audio is deleted after each run (--clean-cache), so only MP3s and JSON accumulate.
 [mounts]
   source = "changelog_data"

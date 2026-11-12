@@ -13,7 +13,7 @@ If the person asks what this is, how to use it, or how to get started, offer the
   keys, planning, the first episode, the site, and more episodes. This is the default suggestion.
 - `/plan-show <feed URL>` only plans a show from a feed and fills in `show.json`, without rendering.
 
-The README's "Steps" section is the same flow done by hand.
+The README's "Steps By Hand" section is the same flow done by hand.
 
 ## Things to know before acting
 

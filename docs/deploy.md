@@ -14,7 +14,8 @@ then rebuilds the feed and the back catalog on the volume, so there's nothing to
 run retries up to three times, five minutes apart. Set `CHANGELOG_PUSHOVER_TOKEN` and
 `CHANGELOG_PUSHOVER_USER` (see `.env.sample`) to get a push for each retry and for the result.
 
-A week with no changelog entries gets no episode. Each run also re-checks about four weeks of
+A week with no changelog entries gets no episode, and the home page shows a one-line Quiet note
+for that release date. Each run also re-checks about four weeks of
 earlier releases (four weekly, two biweekly, or one monthly), so an entry that shows up late still
 gets an episode.
 
@@ -29,6 +30,9 @@ fly ssh sftp get -a dg-devrel-deepgram-changelog /data/runs/<stamp>/run.log .
 
 To deploy your own:
 
+0. **Create the app and its volume.** `fly apps create <your-app>` (or `fly launch --no-deploy`),
+   then `fly volumes create changelog_data --size 1 --region <region>`. The secrets step fails
+   without an app.
 1. **Set the site.** Put your public URL in `show.json` `site_url` and in `[env]` in `fly.toml`,
    and rename `app` in `fly.toml`.
 2. **Set the keys.** `fly secrets set DEEPGRAM_API_KEY=... ANTHROPIC_API_KEY=...`
@@ -42,16 +46,16 @@ onto the volume when it boots (`seed_volume.py`). A newer local render replaces 
 Episodes the cron made only exist on the volume. Locally, set `ART_PYTHON` if your default Python
 doesn't have Pillow.
 
-**Storage:** an episode takes about 1.5 MB on the volume (a 64 kbps MP3 plus art and JSON). All 141
-use about 175 MB of the 1 GB volume, and new weeks add roughly 75 MB a year. The server deletes its
+**Storage:** an episode takes about 1.8 MB on the volume (a 64 kbps MP3, about 600 KB of art, and
+JSON). All 146 use about 260 MB of the 1 GB volume, and new weeks add roughly 95 MB a year. The server deletes its
 raw paragraph audio (`.cache/tts`) after each run. Locally it's kept, so editing a script only
 re-renders the paragraphs you changed.
 
 Each `script.md` carries writer's notes, so the deploy leaves it out. `serve.py` only serves an
 allowlist of public file names from the episodes directory.
 
-**Cost:** going by the 141 episodes on the live
-[back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog), an episode is about 10
-cents of Flux TTS and 9 cents of Claude. That's roughly 20 cents a week, or about $10 for a year of
+**Cost:** going by the 146 episodes on the live
+[back catalog](https://dg-devrel-deepgram-changelog.fly.dev/back-catalog), an episode is about 11
+cents of Flux TTS and 10 cents of Claude. That's roughly 20 cents a week, or about $11 for a year of
 Tuesdays. A backfill costs the same per episode, so check the week count in
 `research/backfill-review.html` first.

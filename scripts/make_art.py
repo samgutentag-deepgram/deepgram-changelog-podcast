@@ -413,6 +413,14 @@ def make_episode_art(ep_dir: Path) -> Path:
 
 # ---- CLI ---------------------------------------------------------------------------------------
 
+def _shown(path: Path) -> Path:
+    """The path relative to the repo when it is inside it, else as given (EPISODES_DIR on Fly)."""
+    try:
+        return path.relative_to(ROOT)
+    except ValueError:
+        return path
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description='Write the show cover, or per-episode art.')
     ap.add_argument('episodes', nargs='*', type=Path, help='episode dirs; none means the cover')
@@ -424,7 +432,7 @@ def main() -> None:
         dirs += sorted(p.parent for p in EPISODES.glob('*/episode.json'))
     if not dirs:
         out = make_cover()
-        print(f'wrote {out.relative_to(ROOT)} ({out.stat().st_size // 1024} KB)')
+        print(f'wrote {_shown(out)} ({out.stat().st_size // 1024} KB)')
         return
     failed = 0
     for ep in dirs:
@@ -439,11 +447,7 @@ def main() -> None:
             print(f'failed {ep}: {e}')
             failed += 1
             continue
-        try:
-            shown = out.relative_to(ROOT)
-        except ValueError:
-            shown = out
-        print(f'wrote {shown} ({out.stat().st_size // 1024} KB)')
+        print(f'wrote {_shown(out)} ({out.stat().st_size // 1024} KB)')
     if failed:
         raise SystemExit(1)
 
