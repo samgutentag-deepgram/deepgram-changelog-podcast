@@ -205,6 +205,15 @@ html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
 .bc-cmd { margin: 0 0 0.6rem; padding: 0.6rem 0.8rem; overflow-x: auto; border: 1px solid var(--dg-border);
   border-radius: var(--dg-shape-panel); background: var(--dg-bg-well); font-size: 0.82rem; }
 
+/* The Deepgram 2026 wordmark (kit p9), drawn as a mask so it takes the ink token: off-white on
+   the dark theme, off-black on the light one, the only two colorways the kit allows. Clear space
+   on its right keeps it from locking up with the show name. */
+.masthead-logo { flex: none; display: block; width: 5.6rem; height: 1.07rem; margin-right: 0.9rem;
+  background: var(--dg-text-primary);
+  -webkit-mask: url("/brand/deepgram-logo-2026-dark.svg") no-repeat left center / contain;
+          mask: url("/brand/deepgram-logo-2026-dark.svg") no-repeat left center / contain; }
+@media (max-width: 640px) { .masthead-logo { width: 5.2rem; height: 1rem; margin-right: 0.8rem; } }
+
 /* Site nav: the same three links on every page, between the show name and the controls. On a
    phone it drops to its own row under the name, so nothing truncates. */
 .masthead-brand { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
@@ -213,10 +222,11 @@ html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
 .masthead-credit { font-size: 0.68rem; color: var(--dg-text-label); text-decoration: none; white-space: nowrap; }
 .masthead-credit:hover { color: var(--dg-accent); }
 html[data-theme="light"] .masthead-credit:hover { color: var(--dg-accent-on-light); }
-.site-nav { display: flex; gap: 0.1rem; margin-right: auto; margin-left: 0.4rem; min-width: 0; }
+.site-nav { display: flex; gap: 0.1rem; margin-right: auto; margin-left: 0.4rem; min-width: 0;
+  overflow-x: auto; scrollbar-width: none; }
 .site-nav a {
-  display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0 0.6rem;
-  font-size: 0.78rem; color: var(--dg-text-label); text-decoration: none;
+  display: inline-flex; align-items: center; min-height: 2.25rem; padding: 0 0.45rem;
+  font-size: 0.78rem; color: var(--dg-text-label); text-decoration: none; white-space: nowrap;
   border-radius: var(--dg-shape-pill);
 }
 .site-nav a:hover { color: var(--dg-text-primary); background: var(--dg-bg-well); }

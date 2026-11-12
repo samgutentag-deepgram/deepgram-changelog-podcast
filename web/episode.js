@@ -4,8 +4,11 @@
 //
 // Reads the JSON that scripts/render_episode.py writes. No build step, native ES module.
 import { mmss, usd, count } from './format.js'
+// Voices with an official 2026 voice-card object (web/brand/avatars/). Others keep the orb dot.
+const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin', 'gemma', 'haley',
+  'hannah', 'heather', 'kai', 'kit', 'meena', 'miles', 'sean', 'sienna']
 
-(function () {
+;(function () {
   var params = new URLSearchParams(location.search)
   // Two ways in: episode.html?id=<id>, and the short /e/<id> that serve.py fills with unfurl tags.
   var short = location.pathname.match(/^\/e\/([^/]+)\/?$/)
@@ -133,6 +136,15 @@ import { mmss, usd, count } from './format.js'
       var body = el('div', 'body')
       if (multi) {
         var who = el('div', 'who', seg.speaker_key + ' ')
+        var short = String(seg.voice_id || '').replace(/^flux-/, '').replace(/-[a-z]{2}$/, '')
+        if (AVATARS.indexOf(short) !== -1) {
+          // The kit's voice card: the voice's object on its color tile. Decorative, the name follows.
+          var av = el('img', 'avatar-tile')
+          av.src = '/brand/avatars/' + short + '.webp'; av.alt = ''; av.width = 30; av.height = 30
+          av.setAttribute('data-tile', short)
+          who.insertBefore(av, who.firstChild)
+          who.classList.add('has-avatar')
+        }
         who.appendChild(el('span', 'voice', seg.voice_id))
         body.appendChild(who)
       }
@@ -198,11 +210,11 @@ import { mmss, usd, count } from './format.js'
       }
     })
 
-    wireTransport(player, chapters, ep.voice_id, multi)
+    wireTransport(player, chapters, ep.voice_id, multi, [ep.host].concat(ep.hosts || [], ep.cast || []))
     followAlong(player)
   }
 
-  function wireTransport(player, chapters, voiceId, multi) {
+  function wireTransport(player, chapters, voiceId, multi, cast) {
     var transport = document.getElementById('transport')
     var mark = document.getElementById('transport-mark')
     var timeEl = document.getElementById('transport-time')
@@ -210,8 +222,9 @@ import { mmss, usd, count } from './format.js'
     var bar = document.getElementById('transport-bar')
     var ticks = document.getElementById('transport-ticks')
     var analyser = null
-    var orb = (window.HNOrb && window.HNOrb.attach) ? window.HNOrb.attach(transport, { observe: false }) : null
-    // One host, so the orb wears their palette from the start instead of waiting for playback.
+    // The cast cluster stands in for the molten orb: the episode's voices in one group bubble, the
+    // host in the largest seat. It keeps the orb's API, so everything below drives it unchanged.
+    var orb = window.DGCluster ? window.DGCluster.attach(transport, { cast: cast }) : null
     if (orb) orb.setSpeaker(voiceId, null, true)
 
     function connect() {

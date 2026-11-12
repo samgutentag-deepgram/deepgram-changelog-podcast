@@ -8,11 +8,13 @@
 <link rel="icon" href="/favicon.ico" sizes="32x32">
 <link rel="icon" href="/icon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<script src="/felt.js"></script>
 <link rel="stylesheet" href="brand.css">
 <link rel="stylesheet" href="readback.css">
 </head>
 <body>
 <header class="masthead">
+  <a class="masthead-logo" href="https://deepgram.com" target="_blank" rel="noopener" aria-label="Deepgram"></a>
   <div class="masthead-brand">
     <a class="masthead-name" href="/">The Deepgram Changelog</a>
     <a class="masthead-credit" data-credit="masthead" href="https://deepgram.com/product/text-to-speech" target="_blank" rel="noopener">read by Deepgram Flux</a>
@@ -60,6 +62,8 @@ first, then launches, then everything else that shipped the week before, with a 
 for every item. Brooke anchors, a fixed cast of voices takes each product segment, and every word
 is Deepgram Flux TTS.</p>
 
+<ul class="quiet-list quiet-latest" id="quiet-latest" hidden></ul>
+
 <section id="hero" class="hero" hidden aria-labelledby="hero-title">
   <button id="hero-play" class="hero-play orb orb-glyph" type="button" aria-label="Play the latest episode">
     <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
@@ -91,6 +95,7 @@ is Deepgram Flux TTS.</p>
 <script src="theme.js"></script>
 <script src="subscribe.js"></script>
 <script src="orb.js"></script>
+<script src="cluster.js"></script>
 <script type="module">
 import { mmss } from './format.js'
 
@@ -102,11 +107,93 @@ function el(tag, cls, text) {
 }
 function href(e) { return '/e/' + encodeURIComponent(e.id) }
 
-fetch('/episodes/index.json').then(function (r) {
-  if (!r.ok) throw new Error('index.json ' + r.status)
-  return r.json()
-}).then(function (d) {
+// QUIET WEEKS. A release day whose week had no changelog entries gets no episode and nothing in the
+// podcast feed, but it does get a line here, so a gap in the list reads as "nothing shipped" rather
+// than "the show stopped". A release day is quiet when it falls between (or after) published
+// episodes, is in the past, and is not in catalog.json, which lists every week that HAD entries,
+// published or not. A week with entries and no episode (a failed run) is therefore never called
+// quiet. Runs of quiet weeks fold into one line. Monthly shows skip this: their gaps are uneven.
+var DAY = 86400000
+function dayOf(iso) { return new Date(iso + 'T12:00:00Z') }
+function iso(d) { return d.toISOString().slice(0, 10) }
+function fmt(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }) }
+function fmtShort(d) { return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }) }
+
+function quietWeeks(all, hadEntries) {
+  if (!hadEntries || all.length < 2) return []
+  var step = Infinity
+  for (var i = 0; i + 1 < all.length; i++) {
+    var g = Math.round((dayOf(all[i].id) - dayOf(all[i + 1].id)) / DAY)
+    if (g > 0 && g < step) step = g
+  }
+  if (!isFinite(step) || step > 14) return []
+  // The window's offset from the release day, read off a real episode rather than assumed.
+  var w = all[0].window || {}
+  var startOff = w.start ? Math.round((dayOf(all[0].id) - dayOf(w.start)) / DAY) : 9
+  var endOff = w.end ? Math.round((dayOf(all[0].id) - dayOf(w.end)) / DAY) : 3
+  var today = iso(new Date())
+  var quiet = []
+  function consider(rel) {
+    var id = iso(rel)
+    if (id >= today || hadEntries[id]) return
+    quiet.push({ id: id, start: new Date(rel - startOff * DAY), end: new Date(rel - endOff * DAY) })
+  }
+  for (var r = new Date(+dayOf(all[0].id) + step * DAY); iso(r) < today; r = new Date(+r + step * DAY)) consider(r)
+  for (var j = 0; j + 1 < all.length; j++) {
+    for (var q = new Date(+dayOf(all[j].id) - step * DAY); q > dayOf(all[j + 1].id); q = new Date(+q - step * DAY)) consider(q)
+  }
+  quiet.sort(function (a, b) { return a.id < b.id ? 1 : -1 })
+  // Fold consecutive quiet release days into one run, newest first.
+  var runs = []
+  quiet.forEach(function (x) {
+    var last = runs[runs.length - 1]
+    if (last && Math.round((dayOf(last.oldest.id) - dayOf(x.id)) / DAY) === step) { last.oldest = x; last.count++ }
+    else runs.push({ newest: x, oldest: x, count: 1 })
+  })
+  return runs
+}
+
+function quietRow(run) {
+  var li = el('li', 'quiet-row')
+  var text
+  if (run.count === 1) {
+    text = fmt(dayOf(run.newest.id)) + ': no episode. Nothing shipped to the changelog '
+      + fmtShort(run.newest.start) + ' to ' + fmtShort(run.newest.end) + '.'
+  } else {
+    text = run.count + ' quiet weeks, ' + fmtShort(run.oldest.start) + ' to ' + fmt(run.newest.end)
+      + ': nothing shipped to the changelog, so no episodes.'
+  }
+  li.appendChild(el('span', 'quiet-mark', 'Quiet'))
+  li.appendChild(el('span', 'quiet-text', text))
+  return li
+}
+
+Promise.all([
+  fetch('/episodes/index.json').then(function (r) {
+    if (!r.ok) throw new Error('index.json ' + r.status)
+    return r.json()
+  }),
+  // Optional: without the catalog there is no way to tell a quiet week from a failed one, so the
+  // quiet lines are simply left out.
+  fetch('/episodes/catalog.json').then(function (r) { return r.ok ? r.json() : null }).catch(function () { return null }),
+]).then(function (res) {
+  var d = res[0]
+  var hadEntries = null
+  if (res[1] && res[1].episodes) {
+    hadEntries = {}
+    res[1].episodes.forEach(function (c) { hadEntries[c.release || c.id] = true })
+  }
   var all = d.episodes || []
+  var runs = all.length ? quietWeeks(all, hadEntries) : []
+  // Quiet weeks newer than the latest episode go above the hero; the rest go in the list, each
+  // just above the episode that came out before it.
+  var latest = document.getElementById('quiet-latest')
+  var below = {}
+  runs.forEach(function (run) {
+    if (run.oldest.id > all[0].id) { latest.appendChild(quietRow(run)); latest.hidden = false; return }
+    var before = all.filter(function (e) { return e.id < run.oldest.id })[0]
+    if (before) (below[before.id] = below[before.id] || []).push(run)
+  })
   var list = document.getElementById('episodes')
   list.innerHTML = ''
   if (!all.length) { list.appendChild(el('li', 'muted', 'No episodes yet.')); return }
@@ -115,16 +202,14 @@ fetch('/episodes/index.json').then(function (r) {
   if (!rest.length) { list.hidden = true; return }
   document.getElementById('more-h').hidden = false
   rest.forEach(function (e) {
+    (below[e.id] || []).forEach(function (run) { list.appendChild(quietRow(run)) })
     var li = el('li')
     var cell = el('div', 'ep-cell ep-cell--linked ep-cell--art')
-    // The episode's art, as a square to the left. It is decorative next to the title, so it is
-    // hidden from screen readers, and if an episode has no art the cell falls back to one column.
+    // The episode's cast as a still group bubble, to the left of the title. Decorative: the
+    // title and the host line carry the same information in text.
     var artLink = el('a', 'ep-art-link'); artLink.href = href(e); artLink.tabIndex = -1
     artLink.setAttribute('aria-hidden', 'true')
-    var art = el('img', 'ep-art'); art.src = '/episodes/' + encodeURIComponent(e.id) + '/art.jpg'
-    art.alt = ''; art.loading = 'lazy'; art.width = 1400; art.height = 1400
-    art.addEventListener('error', function () { artLink.remove(); cell.classList.remove('ep-cell--art') })
-    artLink.appendChild(art)
+    if (window.DGCluster) artLink.appendChild(window.DGCluster.render(e.hosts && e.hosts.length ? e.hosts : [e.host], 'ep-cluster', { cardsOnly: true }))
     cell.appendChild(artLink)
     var info = el('div', 'ep-info')
     cell.appendChild(info)
@@ -160,7 +245,7 @@ function hero(e) {
   audio.src = '/episodes/' + encodeURIComponent(e.id) + '/episode.mp3'
   section.hidden = false
 
-  var orb = window.HNOrb ? window.HNOrb.attach(btn, { observe: false }) : null
+  var orb = window.DGCluster ? window.DGCluster.attach(btn, { cast: [e.host].concat(others), cardsOnly: true }) : null
   var analyser = null, chapters = []
   fetch('/episodes/' + encodeURIComponent(e.id) + '/episode.json').then(function (r) { return r.json() })
     .then(function (ep) { if (orb) orb.setSpeaker(ep.voice_id, null, true) }).catch(function () {})

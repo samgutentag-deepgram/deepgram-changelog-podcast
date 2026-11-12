@@ -1,128 +1,138 @@
-"""Write the show cover and per-episode art: a changelog whose bullets are the cast's voice orbs.
+"""Write the show cover and per-episode art: the week on Deepgram felt, read by its cast.
 
 Usage:
     <python with Pillow> scripts/make_art.py                          # episodes/cover.png
     <python with Pillow> scripts/make_art.py episodes/2026-09-22 ...  # <dir>/art.jpg per dir
     <python with Pillow> scripts/make_art.py --all                    # art for every episode dir
 
-The concept is a diff read aloud. A commit rail runs down the left edge, every commit on it is a
-molten voice orb in the palette of the voice that reads that segment, and each added line trails
-off into a waveform in the same shades, so the art says "this changelog, spoken by these voices".
-The cover draws the whole cast; each episode draws only the segments that aired that week, so the
-feed varies per episode but reads as one show.
+The look is the Deepgram 2026 brand kit, the same as the site. The ground is one of the kit's five
+felt colorways (web/brand/art/), picked by release week with the same rule web/felt.js uses, so an
+episode's art matches the page it opens. The cast that read that week sits in a group bubble, each
+voice its official voice-card object on its tile (web/brand/avatars/), the same cluster the site
+puts on the play button. The date is set large in Work Sans, and the segments that aired run down
+the bottom left in Azeret Mono with the voice that read each one.
 
-The orb palettes are parsed out of web/brand.css block 1 at runtime rather than copied here, for
-the same reason web/orb.js probes the stylesheet: a second copy of the palette drifts. The orb
-geometry and pose math are ported from web/orb.js and brand.css block 5, with each voice frozen at
-its own clock the way idle orbs hold a pose on the site, so voices that share a palette (Brooke,
-Kit, Miles, Cole) still get different shapes.
-
-Pillow is the only non-stdlib import, and fonts come from a candidate list so the same script runs
-on macOS (Helvetica Neue, Menlo) and in python:3.12-slim with fonts-dejavu-core.
+Every asset is read from web/, which stage_site.py ships to Fly, so the weekly run in the container
+draws the same art as a local run. Pillow is the only non-stdlib import.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import math
-import re
-import zlib
-from datetime import date
+import os
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 from show import ATTRIBUTION_TEXT, SHOW
 from cadence import CADENCE
-from segments import PRODUCTS, SEGMENTS
+from segments import SEGMENTS
 
 ROOT = Path(__file__).resolve().parent.parent
-EPISODES = ROOT / 'episodes'
-BRAND_CSS = ROOT / 'web' / 'brand.css'
+EPISODES = Path(os.environ.get('EPISODES_DIR', ROOT / 'episodes'))
+WEB = ROOT / 'web'
+FELT = WEB / 'brand' / 'art'
+AVATARS = WEB / 'brand' / 'avatars'
+FONTS = WEB / 'fonts'
 CAST_JSON = ROOT / 'docs' / 'cast.json'
 
-BLACK = (0, 0, 0)
-INK = (251, 251, 255)        # --dg-ink-primary
-MUTED = (148, 148, 152)      # --dg-ink-muted
-ACCENT = (19, 239, 149)      # --dg-accent
-ORB_GROUND = (16, 16, 20)    # the rgb(16,16,20) rect under every official orb
+# The kit's colors, mirrored from web/brand.css block 0.
+OFF_WHITE = (252, 250, 248)
+OFF_BLACK = (29, 29, 29)
+LIGHT_GRAY = (196, 196, 196)
+FUCHSIA = (224, 66, 255)
+TILES = {
+    'bakelite': (250, 129, 0), 'led': (127, 57, 255), 'brass': (247, 243, 0), 'glass': (0, 178, 255),
+    'fuchsia': (224, 66, 255), 'clay': (235, 42, 46), 'phosphor': (124, 217, 65),
+}
+NEUTRAL_TILE = LIGHT_GRAY
+# Which tile each voice card sits on, from the official card set (web/brand/avatars/voices.json).
+VOICE_TILE = {
+    'colin': 'bakelite', 'gemma': 'bakelite', 'alexis': 'led', 'brittany': 'led',
+    'haley': 'brass', 'kit': 'brass', 'sean': 'brass', 'sienna': 'brass',
+    'kai': 'glass', 'miles': 'glass', 'cliff': 'glass', 'brooke': 'glass',
+    'meena': 'fuchsia', 'bree': 'fuchsia', 'cole': 'clay', 'hannah': 'clay', 'heather': 'phosphor',
+}
+COLORWAYS = 5
 
-# Only used when brand.css is missing or a voice has no rule in it. Brooke's run.
-FALLBACK_PALETTE = {'l': (161, 215, 253), 'm': (29, 157, 251), 'd': (61, 22, 143), 'g': (61, 22, 143)}
+# Bubble seats as fractions of the cluster: x, y, diameter. One to four mirror web/cluster.js;
+# five and six only appear on the show cover.
+LAYOUTS = {
+    1: [(0.50, 0.50, 0.72)],
+    2: [(0.38, 0.40, 0.50), (0.65, 0.64, 0.42)],
+    3: [(0.40, 0.38, 0.50), (0.72, 0.56, 0.36), (0.42, 0.74, 0.32)],
+    4: [(0.37, 0.37, 0.46), (0.71, 0.37, 0.33), (0.65, 0.69, 0.40), (0.32, 0.69, 0.30)],
+    5: [(0.38, 0.36, 0.42), (0.72, 0.33, 0.30), (0.74, 0.64, 0.32), (0.45, 0.72, 0.32), (0.18, 0.58, 0.22)],
+    6: [(0.36, 0.34, 0.40), (0.70, 0.29, 0.28), (0.79, 0.58, 0.26), (0.57, 0.76, 0.30), (0.27, 0.69, 0.30),
+        (0.57, 0.52, 0.20)],
+}
 
 SMALL, BIG = SHOW['wordmark']
+SHOW_NAME = f'{SMALL} {BIG}'.strip()
 # A fork's art credits the voices; Deepgram's own show already says Deepgram in the wordmark.
-CREDIT = ATTRIBUTION_TEXT if SHOW['attribution'] and 'Deepgram' not in SMALL + BIG else ''
+CREDIT = ATTRIBUTION_TEXT if SHOW['attribution'] and 'Deepgram' not in SHOW_NAME else ''
 
 RUNNING_ORDER = ['Intro', *SEGMENTS, 'Outro']
 # Intro and Outro are canned and air every week, so they carry no information on the art.
 CANNED = {'Intro', 'Outro'}
 SHORT_NAMES = {'Breaking changes and action required': 'Breaking changes'}
 
-SANS_BOLD = [('/System/Library/Fonts/HelveticaNeue.ttc', 1), ('/System/Library/Fonts/Helvetica.ttc', 1),
-             ('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf', 0)]
-SANS_MEDIUM = [('/System/Library/Fonts/HelveticaNeue.ttc', 10), ('/System/Library/Fonts/Helvetica.ttc', 0),
-               ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 0)]
-MONO = [('/System/Library/Fonts/Menlo.ttc', 0), ('/System/Library/Fonts/SFNSMono.ttf', 0),
-        ('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf', 0),
-        ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', 0)]
 
-_font_cache: dict[tuple[int, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
+# ---- fonts -------------------------------------------------------------------------------------
+
+FALLBACK_SANS = ['/System/Library/Fonts/HelveticaNeue.ttc', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf']
+FALLBACK_MONO = ['/System/Library/Fonts/Menlo.ttc', '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf']
+_font_cache: dict[tuple[str, int, int], ImageFont.FreeTypeFont | ImageFont.ImageFont] = {}
 _warned = False
 
 
-def font(candidates: list[tuple[str, int]], size: int):
-    key = (id(candidates), size)
+def font(family: str, size: int, weight: int = 400):
+    """Work Sans ('sans') or Azeret Mono ('mono') from web/fonts at a weight, with system fallbacks."""
+    global _warned
+    key = (family, size, weight)
     if key in _font_cache:
         return _font_cache[key]
-    for path, index in candidates:
-        if Path(path).exists():
+    own = FONTS / ('WorkSans-Variable.ttf' if family == 'sans' else 'AzeretMono-Variable.ttf')
+    f = None
+    if own.exists():
+        try:
+            f = ImageFont.truetype(str(own), size)
             try:
-                f = ImageFont.truetype(path, size, index=index)
-                _font_cache[key] = f
-                return f
-            except OSError:
-                continue
-    global _warned
-    if not _warned:
-        print('no TrueType font found, falling back to the bitmap default')
-        _warned = True
-    f = ImageFont.load_default(size)
+                f.set_variation_by_axes([weight])
+            except (OSError, ValueError, AttributeError):
+                pass   # a Pillow built without variation support draws the default weight
+        except OSError:
+            f = None
+    if f is None:
+        for path in (FALLBACK_SANS if family == 'sans' else FALLBACK_MONO):
+            if Path(path).exists():
+                try:
+                    f = ImageFont.truetype(path, size)
+                    break
+                except OSError:
+                    continue
+    if f is None:
+        if not _warned:
+            print('no TrueType font found, falling back to the bitmap default')
+            _warned = True
+        f = ImageFont.load_default(size)
     _font_cache[key] = f
     return f
 
 
-# ---- palettes ----------------------------------------------------------------------------------
+def fit(text: str, family: str, size: int, weight: int, max_w: float):
+    """The largest font no bigger than `size` that fits `text` in `max_w` pixels."""
+    while size > 8:
+        f = font(family, size, weight)
+        if f.getlength(text) <= max_w:
+            return f
+        size -= max(1, size // 40)
+    return font(family, size, weight)
 
-def _hex(s: str) -> tuple[int, int, int]:
-    s = s.strip().lstrip('#')
-    if len(s) == 3:
-        s = ''.join(c * 2 for c in s)
-    return int(s[0:2], 16), int(s[2:4], 16), int(s[4:6], 16)
 
-
-def load_palettes(css_path: Path = BRAND_CSS) -> dict[str, dict[str, tuple[int, int, int]]]:
-    """Every `[data-voice="..."] { --v-l; --v-m; --v-d; --v-g }` rule in brand.css, by voice id."""
-    try:
-        css = css_path.read_text(encoding='utf-8')
-    except OSError as e:
-        print(f'could not read {css_path}: {e}; using the fallback palette')
-        return {}
-    out = {}
-    for m in re.finditer(r'\[data-voice="([^"]+)"\]\s*\{([^}]*)\}', css):
-        body = m.group(2)
-        vals = dict(re.findall(r'--v-([lmdg])\s*:\s*([^;]+);', body))
-        try:
-            g = tuple(int(x) for x in vals['g'].split(','))
-            out[m.group(1)] = {'l': _hex(vals['l']), 'm': _hex(vals['m']), 'd': _hex(vals['d']),
-                               'g': g if len(g) == 3 else _hex(vals['d'])}
-        except (KeyError, ValueError):
-            continue
-    if not out:
-        print(f'no [data-voice] palettes found in {css_path}; using the fallback palette')
-    return out
-
+# ---- cast --------------------------------------------------------------------------------------
 
 def load_cast(path: Path = CAST_JSON) -> dict:
     try:
@@ -137,181 +147,170 @@ def voice_for(segment: str, cast: dict) -> tuple[str, str]:
     return seat.get('name', 'Brooke'), seat.get('voice', 'flux-brooke-en')
 
 
-# ---- the orb -----------------------------------------------------------------------------------
-
-# The site's molten orb (web/orb.js + brand.css block 5): three blurred ellipses in a 144px box on
-# a near-black ground, light on the largest, deep on the smallest. (left, top, w, h, blur, shade).
-ORB_ELLIPSES = [(4, 72, 135, 75, 9, 'l'), (9, 60, 124, 69, 8, 'm'), (40, 66, 66, 37, 7, 'd')]
-
-
-def orb_phase(voice: str) -> float:
-    """A fixed clock per voice, so each orb holds its own pose the way idle orbs do on the site."""
-    return (zlib.crc32(voice.encode()) % 4000) / 100
+def voice_key(name_or_voice: str) -> str:
+    """'Brooke' or 'flux-brooke-en' -> 'brooke'."""
+    k = str(name_or_voice or '').strip().lower()
+    if k.startswith('flux-'):
+        k = k[5:]
+    if len(k) > 3 and k[-3] == '-':
+        k = k[:-3]
+    return k
 
 
-def _pose(e: float, r: int) -> tuple[float, float, float, float, float]:
-    """applyMolten from web/orb.js at envelope 0: translate x, y, rotate degrees, scale x, y."""
-    i = e - r * 0.09
-    a = math.sin(i * 0.311) * 20 + math.sin(i * 0.829) * 10 + math.cos(i * 0.173) * 6
-    o = math.cos(i * 0.257) * 18 + math.sin(i * 0.691) * 9 + math.sin(i * 0.143) * 6 - 26
-    s = math.sin(i * 0.19) * 130 + math.sin(i * 0.53) * 35
-    c = 1.15 + 0.35 * math.sin(i * 0.47)
-    ly = 1.15 + 0.35 * math.sin(i * 0.613 + 2.1)
-    return a, o, s, c, ly
+# ---- felt --------------------------------------------------------------------------------------
+
+def colorway(day: date) -> int:
+    """1 to 5: the kit colorway for the week holding `day`. Same rule as web/felt.js."""
+    days = (day - date(1970, 1, 1)).days
+    return ((days + 3) // 7) % COLORWAYS + 1
 
 
-def render_orb(diameter: int, pal: dict[str, tuple[int, int, int]], phase: float = 0.0,
-               halo: float = 0.45) -> Image.Image:
-    """An RGBA orb plus its drop glow, on a canvas twice the diameter so the glow has room."""
-    k = diameter / 144
-    core = Image.new('RGB', (diameter, diameter), ORB_GROUND)
-    for r, (left, top, w, h, blur, shade) in enumerate(ORB_ELLIPSES):
-        a, o, s, sx, sy = _pose(phase, r)
-        ew, eh = w * sx * k, h * sy * k
-        pad = int(max(ew, eh) * 0.75 + blur * k * 3) + 2
-        tile = Image.new('L', (pad * 2, pad * 2), 0)
-        ImageDraw.Draw(tile).ellipse((pad - ew / 2, pad - eh / 2, pad + ew / 2, pad + eh / 2), fill=255)
-        # CSS rotate() is clockwise on screen, PIL's is counterclockwise.
-        tile = tile.rotate(-s, resample=Image.BICUBIC).filter(ImageFilter.GaussianBlur(blur * k))
-        cx, cy = (left + w / 2 + a) * k, (top + h / 2 + o) * k
-        layer = Image.new('L', (diameter, diameter), 0)
-        layer.paste(tile, (round(cx - pad), round(cy - pad)))
-        core.paste(pal[shade], (0, 0), layer)
-
-    # The inset glow, `inset 0 24px 84px rgba(g, 0.55)` in the large-orb rule: light pooled
-    # inside the rim, heaviest at the top because the shadow is offset down.
-    rim = Image.new('L', (diameter, diameter), 255)
-    ImageDraw.Draw(rim).ellipse((0, 24 / 360 * diameter, diameter, diameter * (1 + 24 / 360)), fill=0)
-    rim = rim.filter(ImageFilter.GaussianBlur(42 / 360 * diameter))
-    core.paste(pal['g'], (0, 0), rim.point(lambda v: int(v * 0.55)))
-
-    ss = 4
-    clip = Image.new('L', (diameter * ss, diameter * ss), 0)
-    ImageDraw.Draw(clip).ellipse((0, 0, diameter * ss - 1, diameter * ss - 1), fill=255)
-    clip = clip.resize((diameter, diameter), Image.LANCZOS)
-
-    canvas = diameter * 2
-    off = diameter // 2
-    out = Image.new('RGBA', (canvas, canvas), (0, 0, 0, 0))
-    if halo > 0:
-        # The drop glow is the mid shade rather than the glow triple: most glow triples are deep
-        # violets and greens that vanish on pure black.
-        glow = Image.new('L', (canvas, canvas), 0)
-        ImageDraw.Draw(glow).ellipse((off + diameter * 0.08, off + diameter * 0.16,
-                                      off + diameter * 0.92, off + diameter * 1.0), fill=int(255 * halo))
-        glow = glow.filter(ImageFilter.GaussianBlur(diameter * 0.2))
-        tint = Image.new('RGBA', (canvas, canvas), pal['m'] + (0,))
-        tint.putalpha(glow)
-        out = Image.alpha_composite(out, tint)
-    orb = core.convert('RGBA')
-    orb.putalpha(clip)
-    out.alpha_composite(orb, (off, off))
-    return out
+def felt(size: int, style: int, image: str = 'd') -> Image.Image:
+    path = FELT / f'{image}{style}.jpg'
+    try:
+        im = Image.open(path).convert('RGB')
+    except OSError as e:
+        print(f'no felt at {path}: {e}; drawing on off-black')
+        return Image.new('RGBA', (size, size), OFF_BLACK + (255,))
+    return im.resize((size, size), Image.LANCZOS).convert('RGBA')
 
 
-def place_orb(img: Image.Image, cx: float, cy: float, diameter: int, voice: str, palettes: dict,
-              halo: float = 0.45) -> None:
-    orb = render_orb(diameter, palettes.get(voice, FALLBACK_PALETTE), orb_phase(voice), halo)
-    img.alpha_composite(orb, (round(cx - diameter), round(cy - diameter)))
+def scrim(img: Image.Image, top: float, bottom: float, left: float) -> None:
+    """Darken the felt where the type sits: washes down from the top, up from the bottom, and in from
+    the left, so off-white type clears 4.5:1 on every colorway. Built small and scaled up."""
+    w, h = img.size
+    n = 200
+    mask = Image.new('L', (n, n), 0)
+    px = mask.load()
+    for y in range(n):
+        fy = y / n
+        v = max(0.0, 1 - fy / 0.45) * top + max(0.0, (fy - 0.5) / 0.5) * bottom
+        for x in range(n):
+            a = v + max(0.0, 1 - (x / n) / 0.6) * left
+            px[x, y] = min(255, int(255 * a))
+    shade = Image.new('RGBA', (w, h), (0, 0, 0, 255))
+    shade.putalpha(mask.resize((w, h), Image.BILINEAR))
+    img.alpha_composite(shade)
 
 
-# ---- shared drawing ----------------------------------------------------------------------------
+# ---- the group bubble --------------------------------------------------------------------------
 
-# A diff's added-line highlight: the accent at about 7% on black.
-BAND = (3, 19, 13)
-
-
-def bands(d: ImageDraw.ImageDraw, x0: float, ys: list[float], h: float, right: int) -> None:
-    """Full-bleed added-line bands behind each row, so the list reads as a diff, not a menu."""
-    for y in ys:
-        d.rectangle((x0, y - h / 2, right, y + h / 2), fill=BAND)
-
-
-def waveform(img: Image.Image, x0: float, x1: float, y: float, h: float, bar: float,
-             pal: dict[str, tuple[int, int, int]], seed: str) -> None:
-    """The line being spoken: level-meter bars in the reader's shade, fading into the right edge."""
-    layer = Image.new('RGBA', img.size, (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    rnd = zlib.crc32(seed.encode()) % 1000
-    step = bar * 1.9
-    n = int((x1 - x0) / step)
-    for i in range(n):
-        t = i + rnd
-        amp = 0.25 + 0.75 * abs(math.sin(t * 0.37) * 0.6 + math.sin(t * 1.13) * 0.3 + math.sin(t * 2.71) * 0.25)
-        bh = max(bar, h * min(1.0, amp))
-        x = x0 + i * step
-        alpha = int(255 * 0.85 * (1 - i / n) ** 1.4)
-        # Loud bars run toward the light shade, quiet ones sit in the mid, so the deep-mid runs
-        # (Elise's violet) still read on black and the mint runs read as mint.
-        mix = min(1.0, amp) ** 2
-        color = tuple(round(m + (lt - m) * mix) for m, lt in zip(pal['m'], pal['l']))
-        d.rounded_rectangle((x, y - bh / 2, x + bar, y + bh / 2), radius=bar / 2, fill=color + (alpha,))
-    img.alpha_composite(layer)
+def _tile(d: int, color: tuple[int, int, int]) -> Image.Image:
+    """A round voice-card tile: the color down to 42%, then fading to off-white at the bottom."""
+    grad = Image.new('RGBA', (d, d))
+    gp = ImageDraw.Draw(grad)
+    for y in range(d):
+        t = max(0.0, (y / d - 0.42) / 0.58)
+        c = tuple(round(a + (b - a) * t) for a, b in zip(color, OFF_WHITE))
+        gp.line([(0, y), (d, y)], fill=c + (255,))
+    mask = Image.new('L', (d, d), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, d - 1, d - 1), fill=255)
+    grad.putalpha(mask)
+    return grad
 
 
-def rail(d: ImageDraw.ImageDraw, x: float, y0: float, y1: float, width: int, color) -> None:
-    d.rounded_rectangle((x - width / 2, y0, x + width / 2, y1), radius=width / 2, fill=color)
+def _bubble(name: str, d: int, ringed: bool) -> Image.Image:
+    k = voice_key(name)
+    tile = _tile(d, TILES.get(VOICE_TILE.get(k, ''), NEUTRAL_TILE))
+    src = AVATARS / f'{k}.webp'
+    drawn = False
+    if src.exists():
+        try:
+            obj = Image.open(src).convert('RGBA')
+            obj.thumbnail((int(d * 0.8), int(d * 0.8)), Image.LANCZOS)
+            tile.alpha_composite(obj, ((d - obj.width) // 2, (d - obj.height) // 2))
+            drawn = True
+        except OSError:
+            pass
+    if not drawn:
+        ImageDraw.Draw(tile).text((d / 2, d / 2), (k[:1] or '?').upper(),
+                                  font=font('sans', int(d * 0.42), 600), fill=OFF_BLACK, anchor='mm')
+    if ringed:
+        w = max(3, d // 36)
+        ring = Image.new('RGBA', (d, d), (0, 0, 0, 0))
+        ImageDraw.Draw(ring).ellipse((w // 2, w // 2, d - 1 - w // 2, d - 1 - w // 2),
+                                     outline=FUCHSIA + (255,), width=w)
+        tile.alpha_composite(ring)
+    return tile
 
 
-def fit(text: str, candidates: list[tuple[str, int]], size: int, max_w: float):
-    """The largest font no bigger than `size` that fits `text` in `max_w` pixels."""
-    while size > 8:
-        f = font(candidates, size)
-        if f.getlength(text) <= max_w:
-            return f
-        size -= max(1, size // 40)
-    return font(candidates, size)
+def _soft_shadow(img: Image.Image, box: tuple[float, float, float, float], alpha: int, blur: float) -> None:
+    pad = int(blur * 3)
+    x0, y0, x1, y1 = (int(v) for v in box)
+    layer = Image.new('RGBA', (x1 - x0 + 2 * pad, y1 - y0 + 2 * pad), (0, 0, 0, 0))
+    ImageDraw.Draw(layer).ellipse((pad, pad, pad + x1 - x0, pad + y1 - y0), fill=(0, 0, 0, alpha))
+    img.alpha_composite(layer.filter(ImageFilter.GaussianBlur(blur)), (x0 - pad, y0 - pad))
 
 
-def wordmark(d: ImageDraw.ImageDraw, x: float, y: float, small: int, big: int, max_w: float,
-             gap: float) -> float:
-    """The small wordmark line over the big one (show.json). Returns the bottom edge of the big line."""
-    d.text((x, y), SMALL, font=fit(SMALL, SANS_MEDIUM, small, max_w), fill=INK, anchor='lt')
-    f = fit(BIG, SANS_BOLD, big, max_w)
-    top = y + small + gap
-    d.text((x - f.size * 0.04, top), BIG, font=f, fill=INK, anchor='lt')
-    bbox = d.textbbox((x, top), BIG, font=f, anchor='lt')
-    return bbox[3]
+def cluster(img: Image.Image, cx: float, cy: float, diameter: int, names: list[str]) -> None:
+    """The cast as one group bubble: a frosted glass disc, the host in the largest seat, ringed."""
+    seen, cast = set(), []
+    for n in names:
+        k = voice_key(n)
+        if k and k not in seen:
+            seen.add(k)
+            cast.append(n)
+    # Only voices with an official card get a seat. The host keeps theirs regardless (as an
+    # initial if they have no card), so the bubble is never empty. Same rule as cluster.js's
+    # cardsOnly; the run of show beside the bubble still names everyone who read.
+    cast = [n for i, n in enumerate(cast) if i == 0 or (AVATARS / f'{voice_key(n)}.webp').exists()]
+    cast = cast[:6] or ['Brooke']
+    x0, y0 = int(cx - diameter / 2), int(cy - diameter / 2)
+
+    _soft_shadow(img, (x0, y0 + diameter * 0.04, x0 + diameter, y0 + diameter * 1.04), 120, diameter * 0.05)
+    # Frosted glass: the felt under the disc, blurred and darkened, clipped round.
+    region = img.crop((x0, y0, x0 + diameter, y0 + diameter)).filter(ImageFilter.GaussianBlur(diameter * 0.04))
+    region.alpha_composite(Image.new('RGBA', region.size, OFF_BLACK + (120,)))
+    mask = Image.new('L', region.size, 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, diameter - 1, diameter - 1), fill=255)
+    region.putalpha(mask)
+    img.alpha_composite(region, (x0, y0))
+    edge = Image.new('RGBA', (diameter, diameter), (0, 0, 0, 0))
+    ImageDraw.Draw(edge).ellipse((0, 0, diameter - 1, diameter - 1), outline=OFF_WHITE + (80,),
+                                 width=max(2, diameter // 220))
+    img.alpha_composite(edge, (x0, y0))
+
+    seats = LAYOUTS[len(cast)]
+    # The host goes on last, so their ring sits over any neighbor it touches.
+    for i in list(range(1, len(cast))) + [0]:
+        fx, fy, fd = seats[i]
+        d = int(diameter * fd)
+        bx, by = int(x0 + fx * diameter - d / 2), int(y0 + fy * diameter - d / 2)
+        _soft_shadow(img, (bx, by + d * 0.05, bx + d, by + d * 1.05), 90, d * 0.05)
+        img.alpha_composite(_bubble(cast[i], d, ringed=(i == 0)), (bx, by))
 
 
 # ---- the show cover ----------------------------------------------------------------------------
 
 def make_cover(out: Path = EPISODES / 'cover.png') -> Path:
+    """3000x3000: the show name over felt, and the whole fixed cast in one bubble."""
     size = 3000
-    palettes = load_palettes()
     cast = load_cast()
-    img = Image.new('RGBA', (size, size), BLACK + (255,))
+    # The felt's grain is what makes it felt, but at 3000px a lossless PNG of it runs past 10 MB,
+    # and podcast apps fetch this on every directory listing. Softening the grain before anything
+    # sharp goes on top, then quantizing on save, keeps the cover near 1 MB and reading the same.
+    img = felt(size, 1, 'a').filter(ImageFilter.GaussianBlur(5))
+    scrim(img, top=0.6, bottom=0.45, left=0.25)
     d = ImageDraw.Draw(img)
-
     margin = 230
-    bottom = wordmark(d, margin, 250, 200, 600, size - 2 * margin, 60)
 
-    # Breaking changes in the anchor's voice, then launches, then each product segment.
-    rows = [('Breaking changes', 'Intro'), ('Launches', 'Launches')] + [(p['name'], p['name']) for p in PRODUCTS]
-    top = bottom + 250
-    end = size - 250
-    pitch = (end - top) / (len(rows) - 1)
-    orb_d = int(pitch * 0.86)
-    rail_x = margin + orb_d / 2
-    ys = [top + i * pitch for i in range(len(rows))]
-    bands(d, rail_x + orb_d * 0.5 + 30, ys, pitch * 0.62, size)
-    rail(d, rail_x, top - pitch * 0.55, end + pitch * 0.2, 16, (42, 42, 48))
+    d.text((margin, 250), 'WEEKLY  ·  EVERY TUESDAY', font=font('mono', 78, 500), fill=OFF_WHITE, anchor='lt')
+    small = fit(SMALL, 'sans', 230, 500, size - 2 * margin)
+    big = fit(BIG, 'sans', 520, 600, size - 2 * margin)
+    d.text((margin, 420), SMALL, font=small, fill=OFF_WHITE, anchor='lt')
+    d.text((margin - big.size * 0.04, 420 + small.size * 1.1), BIG, font=big, fill=OFF_WHITE, anchor='lt')
 
-    mono = font(MONO, int(orb_d * 0.36))
-    text_x = rail_x + orb_d * 0.5 + 80
-    for i, (label, segment) in enumerate(rows):
-        y = top + i * pitch
-        _, voice = voice_for(segment, cast)
-        place_orb(img, rail_x, y, orb_d, voice, palettes)
-        d.text((text_x, y), '+', font=mono, fill=ACCENT, anchor='lm')
-        d.text((text_x + mono.getlength('+ '), y), label, font=mono, fill=INK, anchor='lm')
-        wx = text_x + mono.getlength('+ ' + label) + 70
-        waveform(img, wx, size, y, pitch * 0.34, 14, palettes.get(voice, FALLBACK_PALETTE), label)
+    names = [cast.get('anchor', {}).get('name', 'Brooke')]
+    names += [s.get('name', '') for s in cast.get('segments', {}).values()]
+    cluster(img, size - margin - 700, size - margin - 700, 1400, names)
 
+    d.text((margin, size - margin), 'READ BY', font=font('mono', 70, 500), fill=LIGHT_GRAY, anchor='ls')
+    d.text((margin, size - margin + 100), 'DEEPGRAM FLUX', font=font('mono', 70, 500), fill=OFF_WHITE, anchor='ls')
     if CREDIT:
-        d.text((size - margin, size - 110), CREDIT, font=font(SANS_MEDIUM, 64), fill=MUTED, anchor='rs')
+        d.text((size - margin, size - 110), CREDIT, font=font('sans', 64), fill=LIGHT_GRAY, anchor='rs')
     out.parent.mkdir(parents=True, exist_ok=True)
-    img.convert('RGB').save(out, optimize=True)
+    img.convert('RGB').quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE) \
+        .save(out, optimize=True)
     return out
 
 
@@ -349,68 +348,63 @@ def _aired_segments(ep_dir: Path) -> list[str]:
     return sorted(seen, key=lambda t: order.get(t, len(order)))
 
 
+def _release_day(episode: dict, ep_dir: Path) -> date:
+    for raw in (episode.get('release_date'), episode.get('id'), ep_dir.name):
+        try:
+            return date.fromisoformat(str(raw)[:10])
+        except (TypeError, ValueError):
+            continue
+    return datetime.now(timezone.utc).date()
+
+
 def make_episode_art(ep_dir: Path) -> Path:
-    """Write <ep_dir>/art.jpg, 1400x1400: the week's date and one orb per segment that aired."""
+    """Write <ep_dir>/art.jpg, 1400x1400: the week's date over its felt, the cast's group bubble,
+    and the segments that aired with who read each one."""
     ep_dir = Path(ep_dir)
     episode = json.loads((ep_dir / 'episode.json').read_text(encoding='utf-8'))
-    palettes = load_palettes()
     cast = load_cast()
 
     segments = _aired_segments(ep_dir)
     if segments:
-        rows = [(SHORT_NAMES.get(s, s), *voice_for(s, cast)) for s in segments]
+        rows = [(SHORT_NAMES.get(s, s), voice_for(s, cast)[0]) for s in segments]
     else:
-        # No chapters: the anchor alone, named after the host the episode says read it.
-        anchor_name, anchor_voice = voice_for('', cast)
-        rows = [('This week', episode.get('host') or anchor_name, episode.get('voice_id') or anchor_voice)]
+        rows = [('This week', episode.get('host') or voice_for('', cast)[0])]
+
+    host = episode.get('host') or voice_for('', cast)[0]
+    names = [host] + [n for n in (episode.get('hosts') or []) if n != host]
+    names += [n for _, n in rows if n not in names]
 
     size = 1400
-    img = Image.new('RGBA', (size, size), BLACK + (255,))
+    img = felt(size, colorway(_release_day(episode, ep_dir)), 'd')
+    scrim(img, top=0.62, bottom=0.55, left=0.3)
     d = ImageDraw.Draw(img)
-    margin = 110
+    margin = 104
 
-    # The same wordmark as the cover, set small, so a feed of these reads as one show.
-    small_f = font(SANS_MEDIUM, 46)
-    d.text((margin, 104), SMALL, font=small_f, fill=INK, anchor='lt')
-    d.text((margin + small_f.getlength(SMALL + ' '), 104), BIG, font=font(SANS_BOLD, 46), fill=INK, anchor='lt')
+    d.text((margin, 96), SHOW_NAME.upper(), font=font('mono', 34, 500), fill=OFF_WHITE, anchor='lt')
     if CREDIT:
-        d.text((size - margin, size - 56), CREDIT, font=font(SANS_MEDIUM, 30), fill=MUTED, anchor='rs')
+        d.text((size - margin, size - 56), CREDIT, font=font('sans', 30), fill=LIGHT_GRAY, anchor='rs')
 
     dates, year = _date_range(episode)
-    fdate = fit(dates, SANS_BOLD, 150, size - 2 * margin)
-    d.text((margin - fdate.size * 0.04, 196), dates, font=fdate, fill=INK, anchor='lt')
-    date_bottom = d.textbbox((margin, 196), dates, font=fdate, anchor='lt')[3]
+    fdate = fit(dates, 'sans', 190, 600, size - 2 * margin)
+    d.text((margin - fdate.size * 0.05, 168), dates, font=fdate, fill=OFF_WHITE, anchor='lt')
+    date_bottom = d.textbbox((margin, 168), dates, font=fdate, anchor='lt')[3]
     if year:
-        d.text((margin, date_bottom + 34), year, font=font(SANS_MEDIUM, 64), fill=MUTED, anchor='lt')
-        date_bottom += 34 + 64
+        d.text((margin, date_bottom + 30), year, font=font('mono', 56, 400), fill=OFF_WHITE, anchor='lt')
 
-    top = date_bottom + 150
-    end = size - 140
-    n = len(rows)
-    pitch = min(150, (end - top) / (n - 1)) if n > 1 else 0
-    # Row height drives the band and waveform, so a lone fallback row still gets a full-size line.
-    row_h = pitch if n > 1 else 150
-    orb_d = int(min(118, pitch * 0.8)) if n > 1 else 220
-    block = pitch * (n - 1)
-    top = top + max(0, (end - top - block) / 2) if n > 1 else (top + end) / 2
-    rail_x = margin + orb_d / 2
-    reach = max(row_h * 0.6, orb_d / 2 + 90)
-    bands(d, rail_x + orb_d / 2 + 16, [top + i * pitch for i in range(n)], min(row_h * 0.62, 84), size)
-    rail(d, rail_x, top - reach, top + block + reach, 7, (42, 42, 48))
+    bubble_d = 640
+    cluster(img, size - margin - bubble_d / 2 + 30, size - margin - bubble_d / 2 + 20, bubble_d, names[:4])
 
-    label_f = font(MONO, int(min(54, orb_d * 0.44)))
-    voice_f = font(MONO, int(min(40, orb_d * 0.32)))
-    text_x = rail_x + orb_d / 2 + 44
-    for i, (label, name, voice) in enumerate(rows):
-        y = top + i * pitch
-        place_orb(img, rail_x, y, orb_d, voice, palettes)
-        d.text((text_x, y), '+', font=label_f, fill=ACCENT, anchor='lm')
-        lx = text_x + label_f.getlength('+ ')
-        d.text((lx, y), label, font=label_f, fill=INK, anchor='lm')
-        vx = lx + label_f.getlength(label + '  ')
-        d.text((vx, y), name, font=voice_f, fill=MUTED, anchor='lm')
-        wx = vx + voice_f.getlength(name) + 34
-        waveform(img, wx, size, y, min(row_h * 0.34, 46), 6, palettes.get(voice, FALLBACK_PALETTE), label)
+    # The run of show, bottom left: one line per segment that aired, with who read it.
+    label_f = font('mono', 32, 500)
+    voice_f = font('mono', 28, 400)
+    pitch = 58
+    y = size - margin - pitch * (len(rows) - 1)
+    for label, name in rows:
+        d.text((margin, y), '+', font=label_f, fill=FUCHSIA, anchor='ls')
+        lx = margin + label_f.getlength('+ ')
+        d.text((lx, y), label.upper(), font=label_f, fill=OFF_WHITE, anchor='ls')
+        d.text((lx + label_f.getlength(label.upper() + '  '), y), name, font=voice_f, fill=LIGHT_GRAY, anchor='ls')
+        y += pitch
 
     out = ep_dir / 'art.jpg'
     img.convert('RGB').save(out, quality=86, optimize=True, progressive=True, subsampling=0)
