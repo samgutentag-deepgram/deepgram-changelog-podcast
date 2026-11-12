@@ -206,22 +206,17 @@ html[data-theme="light"] .bc-check { color: var(--dg-accent-on-light); }
   border-radius: var(--dg-shape-panel); background: var(--dg-bg-well); font-size: 0.82rem; }
 
 /* The Deepgram 2026 wordmark (kit p9), drawn as a mask so it takes the ink token: off-white on
-   the dark theme, off-black on the light one, the only two colorways the kit allows. Clear space
-   on its right keeps it from locking up with the show name. */
-.masthead-logo { flex: none; display: block; width: 5.6rem; height: 1.07rem; margin-right: 0.9rem;
+   the dark theme, off-black on the light one, the only two colorways the kit allows. The kit also
+   says the logo is never locked up with another element, so it stands alone at the left of the
+   masthead with clear space around it, and the show's own name lives in the page title below. */
+.masthead-logo { flex: none; display: block; width: 6.6rem; height: 1.26rem; margin-right: 2.2rem;
   background: var(--dg-text-primary);
   -webkit-mask: url("/brand/deepgram-logo-2026-dark.svg") no-repeat left center / contain;
           mask: url("/brand/deepgram-logo-2026-dark.svg") no-repeat left center / contain; }
-@media (max-width: 640px) { .masthead-logo { width: 5.2rem; height: 1rem; margin-right: 0.8rem; } }
+@media (max-width: 640px) { .masthead-logo { width: 5.6rem; height: 1.07rem; margin-right: auto; } }
 
-/* Site nav: the same three links on every page, between the show name and the controls. On a
-   phone it drops to its own row under the name, so nothing truncates. */
-.masthead-brand { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
-.masthead-name { font-weight: var(--dg-weight-bold); font-size: 0.95rem; color: var(--dg-text-primary);
-  text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.masthead-credit { font-size: 0.68rem; color: var(--dg-text-label); text-decoration: none; white-space: nowrap; }
-.masthead-credit:hover { color: var(--dg-accent); }
-html[data-theme="light"] .masthead-credit:hover { color: var(--dg-accent-on-light); }
+/* Site nav: the same three links on every page, between the logo and the controls. On a phone it
+   drops to its own row under the logo, so nothing truncates. */
 .site-nav { display: flex; gap: 0.1rem; margin-right: auto; margin-left: 0.4rem; min-width: 0;
   overflow-x: auto; scrollbar-width: none; }
 .site-nav a {
@@ -233,7 +228,6 @@ html[data-theme="light"] .masthead-credit:hover { color: var(--dg-accent-on-ligh
 .site-nav a[aria-current="page"] { color: var(--dg-text-primary); background: var(--dg-bg-well); }
 @media (max-width: 640px) {
   .masthead { flex-wrap: wrap; }
-  .masthead-brand { flex: 1 1 0; }
   .site-nav { order: 3; width: 100%; margin: 0.2rem 0 0; overflow-x: auto; }
   .site-nav a { min-height: 2.75rem; }
 }
