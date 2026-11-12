@@ -33,13 +33,14 @@
 .bc-status { margin: 0 0 0.8rem; }
 .bc-status.bc-error, td.bc-error { color: var(--dg-state-error); }
 
-/* Twelve columns do not fit the 60vw reading column, so the table alone widens to the viewport
-   (less the gutters and a scrollbar's worth) and stays centered on it. Never narrower than the
-   column, so on a phone it is exactly the column and scrolls inside itself. */
+/* The back catalog is the one wide page: the whole column widens (prose inside it keeps its own
+   40rem measure), so the table sits inside the sheet instead of breaking out past its edges. The
+   date-range column went too, since every episode title already says its week. Below the width
+   where eleven columns fit, the table scrolls sideways inside its frame with the episode column
+   pinned, so nothing ever runs past the page margin. */
+body.page-wide { --dg-col: min(84rem, 100vw - 2rem); }
 .bc-wrap {
-  --bc-width: max(100%, min(100vw - 2 * var(--dg-gutter) - 1rem, 88rem));
-  width: var(--bc-width);
-  margin-left: calc(50% - var(--bc-width) / 2);
+  width: 100%;
   overflow-x: auto;
   border: 1px solid var(--dg-border);
   border-radius: var(--dg-shape-panel);

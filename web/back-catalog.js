@@ -164,7 +164,6 @@ import { usd, count } from './format.js'
     var segCounts = (d.totals && d.totals.segments) || {}
     var tr = el('tr')
     tr.appendChild(el('th', 'bc-ep', 'Episode'))
-    tr.appendChild(el('th', 'bc-nw', 'Date range'))
     tr.appendChild(el('th', 'bc-nw', 'Release'))
     tr.appendChild(el('th', 'bc-n', 'Entries'))
     d.segments.forEach(function (s) {
@@ -188,7 +187,7 @@ import { usd, count } from './format.js'
   }
 
   function renderRows(d) {
-    var cols = 6 + d.segments.length
+    var cols = 5 + d.segments.length
     body.innerHTML = ''
     d.episodes.forEach(function (e) {
       var detailId = 'bc-d-' + e.id
@@ -216,7 +215,6 @@ import { usd, count } from './format.js'
       cell.appendChild(el('span', 'bc-tag' + (e.published ? ' is-published' : ''), e.published ? 'Published' : 'Planned'))
       tr.appendChild(first)
 
-      tr.appendChild(el('td', 'bc-nw', (e.start || DASH) + ' to ' + (e.end || DASH)))
       tr.appendChild(el('td', 'bc-nw', e.release ? 'Tue ' + e.release : DASH))
       tr.appendChild(el('td', 'bc-n', e.entries != null ? count(e.entries) : DASH))
       d.segments.forEach(function (s) {
