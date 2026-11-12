@@ -1,10 +1,10 @@
 // Episode page: the player, the chapter strip, the cost receipt, and the script grouped by
 // segment with each segment's show-note links under it. Adapted from HN Radio's web/app.js (github.com/samgutentag-deepgram/hn-radio),
-// minus plays and recasts. Multi-voice episodes label each row and move the orb to the speaker.
+// minus plays and recasts. Multi-voice episodes label each row and move the ring to the speaker.
 //
 // Reads the JSON that scripts/render_episode.py writes. No build step, native ES module.
 import { mmss, usd, count } from './format.js'
-// Voices with an official 2026 voice-card object (web/brand/avatars/). Others keep the orb dot.
+// Voices with an official 2026 voice-card object (web/brand/avatars/). Others get their initial.
 const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin', 'gemma', 'haley',
   'hannah', 'heather', 'kai', 'kit', 'meena', 'miles', 'sean', 'sienna']
 
@@ -137,14 +137,21 @@ const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin
       if (multi) {
         var who = el('div', 'who', seg.speaker_key + ' ')
         var short = String(seg.voice_id || '').replace(/^flux-/, '').replace(/-[a-z]{2}$/, '')
+        // The row wears the voice card's tile color (its rule and its playhead tint), and the name
+        // gets the card itself: the voice's object on its tile, or its initial on a neutral tile
+        // when there is no official card. Decorative either way; the name follows in text.
+        r.setAttribute('data-tile', short)
+        var av
         if (AVATARS.indexOf(short) !== -1) {
-          // The kit's voice card: the voice's object on its color tile. Decorative, the name follows.
-          var av = el('img', 'avatar-tile')
+          av = el('img', 'avatar-tile')
           av.src = '/brand/avatars/' + short + '.webp'; av.alt = ''; av.width = 30; av.height = 30
-          av.setAttribute('data-tile', short)
-          who.insertBefore(av, who.firstChild)
-          who.classList.add('has-avatar')
+        } else {
+          av = el('span', 'avatar-tile is-initial', (seg.speaker_key || short || '?').charAt(0).toUpperCase())
+          av.setAttribute('aria-hidden', 'true')
         }
+        av.setAttribute('data-tile', short)
+        who.insertBefore(av, who.firstChild)
+        who.classList.add('has-avatar')
         who.appendChild(el('span', 'voice', seg.voice_id))
         body.appendChild(who)
       }

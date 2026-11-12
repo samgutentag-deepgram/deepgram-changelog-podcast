@@ -789,6 +789,25 @@ html[data-theme="light"] body::after {
   from { transform: translate3d(0, 0, 0) rotate(-1.5deg); }
   to   { transform: translate3d(0, -14px, 0) rotate(1.5deg); }
 }
+/* Transcript rows on voice-card identity (full rebrand). A row with data-tile
+   takes its rule and its playhead tint from the card's tile color; the speaker
+   name goes to plain ink, because tile colors like Brass fail as text on the
+   light page and the tile beside the name already carries the identity. These
+   outrank the block 12 orb-palette rules, which now only apply to rows without
+   a tile. A voice with no card has no --tile, and falls back to neutral. */
+.seg[data-voice][data-tile] { border-left-color: var(--tile, var(--dg-line-active)); }
+.seg[data-voice][data-tile] .who { color: var(--dg-text-primary); }
+.seg[data-voice][data-tile].active {
+  background: color-mix(in srgb, var(--tile, var(--dg-accent)) 14%, transparent);
+}
+.seg[data-voice][data-tile] .icon:hover { color: var(--dg-text-primary); border-color: var(--tile, var(--dg-line-active)); }
+.avatar-tile.is-initial {
+  display: inline-grid; place-items: center;
+  font-family: var(--dg-font-display); font-weight: var(--dg-weight-bold);
+  font-size: 0.85rem; letter-spacing: 0; text-transform: none;
+  color: var(--dg-ink-on-accent);
+}
+
 /* Voice cards in the transcript: the object on its tile, in place of the dot. */
 .seg .who.has-avatar::before { display: none; }
 .avatar-tile {
@@ -796,7 +815,8 @@ html[data-theme="light"] body::after {
   margin-right: 0.5rem; padding: 0.15rem;
   object-fit: contain; vertical-align: middle;
   border-radius: var(--dg-radius-sm);
-  background: var(--tile, var(--dg-grey-500));
+  background: linear-gradient(to bottom, var(--tile, var(--dg-tile-neutral)) 0%,
+    var(--tile, var(--dg-tile-neutral)) 42%, var(--dg-tile-fade) 100%);
 }
 [data-tile="colin"], [data-tile="gemma"] { --tile: var(--dg-tile-bakelite); }
 [data-tile="alexis"], [data-tile="brittany"] { --tile: var(--dg-tile-led); }
