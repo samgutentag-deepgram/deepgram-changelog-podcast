@@ -100,12 +100,16 @@ import { usd, count } from './format.js'
         label: t.writer_tracked
           ? 'of Claude script writing across ' + count(t.writer_tracked) + ' episodes'
             + (t.writer_estimated ? ', ' + usd(t.writer_usd_estimated, 2) + ' of it estimated (≈)' : '')
-          : 'of Claude script writing' },
-      { value: remainder != null ? usd(remainder, 2) : DASH,
+          : 'of Claude script writing' }
+    ]
+    // With every episode published there is nothing left to estimate, and the cell would read
+    // "$0.00 for the other 0", so it shows only while planned episodes remain.
+    if (planned > 0) {
+      cells.push({ value: remainder != null ? usd(remainder, 2) : DASH,
         label: remainder != null
           ? 'estimated for the other ' + count(planned) + ', at the ' + usd(t.avg_cost_usd, 4) + ' average'
-          : 'estimated once one episode is published' }
-    ]
+          : 'estimated once one episode is published' })
+    }
     renderMore(t, planned)
     var cad = d.cadence && document.getElementById('bc-cadence')
     if (cad && d.cadence.describe) cad.textContent = d.cadence.describe.charAt(0).toUpperCase() + d.cadence.describe.slice(1) + '.'
