@@ -274,7 +274,7 @@ HN front page.
 
 The picture-first guide, with audio clips, is [`docs/how-it-works.html`](docs/how-it-works.html).
 GitHub shows HTML as source, so open it locally. Images for posts live in
-[`docs/images/`](docs/images/).
+[`docs/images/`](docs/images/); `python3 docs/render_figures.py` redraws the two diagrams from the guide.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/architecture-map-dark.png">
