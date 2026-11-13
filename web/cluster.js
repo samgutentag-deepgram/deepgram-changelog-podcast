@@ -1,11 +1,10 @@
 // The cast cluster: the episode's voices as a group bubble, the way a messaging app shows a
-// group thread. It replaces the molten orb on the two play buttons (the home page hero and the
-// episode console) and keeps the orb's API, so the pages drive it the same way:
+// group thread. It sits on the two play buttons (the home page hero and the episode console):
 //
 //   var c = DGCluster.attach(button, { cast: ['Brooke', 'Drew', 'Miles', 'Cole'] })
 //   c.setSpeaker('flux-drew-en')   // or a name; the speaker grows and takes the ring
 //   c.setLive(true)                // playing: the speaker's bubble pulses with the audio
-//   c.setEnvSource(fn)             // fn(dt) -> 0..1, from HNOrb.envelope(analyser)
+//   c.setEnvSource(fn)             // fn(dt) -> 0..1, from DGCluster.envelope(analyser)
 //   DGCluster.render(cast)         // a still bubble for a list row
 //   { cardsOnly: true }            // either call: leave out voices without a card (home page)
 //
@@ -26,6 +25,41 @@
   }
 
   var reduced = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)
+
+  // The audio level that makes the speaking bubble swell. RMS over the time-domain window, not a
+  // spectrum bin: frequency magnitudes carry the analyser's own smoothing and depend on fftSize,
+  // so two pages with different sizes would breathe at different depths off the same audio.
+  // Speech at broadcast level sits around 0.05 to 0.15 RMS and a loud vowel reaches about 0.22,
+  // so 0.22 is full scale. The smoothing is quick to rise so a consonant lands and slow to fall so
+  // the bubble rides the phrase; the coefficients are re-derived against dt from a 60 Hz
+  // reference so it breathes the same on a 120 Hz display.
+  var ENV_FULL_SCALE = 0.22
+  var ENV_ATTACK = 0.4
+  var ENV_RELEASE = 0.12
+
+  function envelope(analyser) {
+    var buf = new Uint8Array(analyser.fftSize)
+    var level = 0
+    return function (dt) {
+      try {
+        analyser.getByteTimeDomainData(buf)
+      } catch (e) {
+        return level // a dead analyser must not stop the animation
+      }
+      var sum = 0
+      for (var i = 0; i < buf.length; i++) {
+        var d = (buf[i] - 128) / 128
+        sum += d * d
+      }
+      var want = Math.min(1, Math.sqrt(sum / buf.length) / ENV_FULL_SCALE)
+      var k = want > level ? ENV_ATTACK : ENV_RELEASE
+      // Clamped at 4 reference frames so a long stall (a background tab coming back) lands on the
+      // new level rather than overshooting past it.
+      k = 1 - Math.pow(1 - k, Math.min(4, Math.max(0, dt) * 60))
+      level += (want - level) * k
+      return level
+    }
+  }
 
   function keyOf(v) {
     return String(v || '').toLowerCase().replace(/^flux-/, '').replace(/-[a-z]{2}$/, '').trim()
@@ -56,7 +90,6 @@
     this.cast = this.cast.slice(0, 4)
     if (!this.cast.length) this.cast = ['brooke']
 
-    el.classList.remove('orb', 'orb-glyph')
     el.classList.add('cluster')
 
     // Whatever glyph the page put in the button moves into a small badge on the rim.
@@ -143,6 +176,7 @@
   }
 
   window.DGCluster = {
+    envelope: envelope,
     // A still group bubble for a list row: no button, no badge, no audio. Decorative.
     render: function (cast, className, opts) {
       var el = document.createElement('span')

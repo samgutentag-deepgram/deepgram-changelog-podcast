@@ -305,9 +305,9 @@ episode's page, show notes, and transcript.
 
 The site wears the Deepgram 2026 brand kit. `web/brand.css` block 0 holds every color, font, and
 radius; `web/felt.js` picks the week's felt colorway and props; `web/cluster.js` draws each episode's
-cast as a group bubble of voice cards; the assets are in `web/brand/` and the fonts (Work Sans and
-Azeret Mono, OFL) in `web/fonts/`. `web/orb.js` is still loaded for one job, measuring the audio level
-that makes the speaking voice swell. Anything specific to this show goes in `web/readback.css`.
+cast as a group bubble of voice cards and measures the audio level that makes the speaking voice
+swell; the assets are in `web/brand/` and the fonts (Work Sans and Azeret Mono, OFL) in
+`web/fonts/`. Anything specific to this show goes in `web/readback.css`.
 
 ## Deploy It
 

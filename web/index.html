@@ -61,7 +61,7 @@ is Deepgram Flux TTS.</p>
 <ul class="quiet-list quiet-latest" id="quiet-latest" hidden></ul>
 
 <section id="hero" class="hero" hidden aria-labelledby="hero-title">
-  <button id="hero-play" class="hero-play orb orb-glyph" type="button" aria-label="Play the latest episode">
+  <button id="hero-play" class="hero-play" type="button" aria-label="Play the latest episode">
     <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>
     <svg class="ico-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.2v14H7zm6.8 0H17v14h-3.2z"/></svg>
   </button>
@@ -90,7 +90,6 @@ is Deepgram Flux TTS.</p>
 
 <script src="theme.js"></script>
 <script src="subscribe.js"></script>
-<script src="orb.js"></script>
 <script src="cluster.js"></script>
 <script type="module">
 import { mmss } from './format.js'
@@ -241,10 +240,10 @@ function hero(e) {
   audio.src = '/episodes/' + encodeURIComponent(e.id) + '/episode.mp3'
   section.hidden = false
 
-  var orb = window.DGCluster ? window.DGCluster.attach(btn, { cast: [e.host].concat(others), cardsOnly: true }) : null
+  var cluster = window.DGCluster ? window.DGCluster.attach(btn, { cast: [e.host].concat(others), cardsOnly: true }) : null
   var analyser = null, chapters = []
   fetch('/episodes/' + encodeURIComponent(e.id) + '/episode.json').then(function (r) { return r.json() })
-    .then(function (ep) { if (orb) orb.setSpeaker(ep.voice_id, null, true) }).catch(function () {})
+    .then(function (ep) { if (cluster) cluster.setSpeaker(ep.voice_id, null, true) }).catch(function () {})
   fetch('/episodes/' + encodeURIComponent(e.id) + '/chapters.json').then(function (r) { return r.json() })
     .then(function (c) { chapters = c.chapters || []; placeTicks() }).catch(function () {})
 
@@ -257,7 +256,7 @@ function hero(e) {
       var src = ac.createMediaElementSource(audio)
       analyser = ac.createAnalyser(); analyser.fftSize = 1024
       src.connect(analyser); analyser.connect(ac.destination)
-      if (orb) orb.setEnvSource(window.HNOrb.envelope(analyser))
+      if (cluster) cluster.setEnvSource(window.DGCluster.envelope(analyser))
       if (ac.state === 'suspended') ac.resume()
     } catch (err) { analyser = null }
   }
@@ -284,8 +283,8 @@ function hero(e) {
     var r = scrub.getBoundingClientRect()
     audio.currentTime = Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)) * audio.duration
   })
-  audio.addEventListener('play', function () { section.classList.add('is-playing'); btn.setAttribute('aria-label', 'Pause'); if (orb) orb.setLive(true) })
-  audio.addEventListener('pause', function () { section.classList.remove('is-playing'); btn.setAttribute('aria-label', 'Play the latest episode'); if (orb) orb.setLive(false) })
+  audio.addEventListener('play', function () { section.classList.add('is-playing'); btn.setAttribute('aria-label', 'Pause'); if (cluster) cluster.setLive(true) })
+  audio.addEventListener('pause', function () { section.classList.remove('is-playing'); btn.setAttribute('aria-label', 'Play the latest episode'); if (cluster) cluster.setLive(false) })
   audio.addEventListener('timeupdate', sync)
   audio.addEventListener('loadedmetadata', function () { sync(); placeTicks() })
 }

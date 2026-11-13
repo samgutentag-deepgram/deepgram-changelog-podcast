@@ -229,10 +229,9 @@ const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin
     var bar = document.getElementById('transport-bar')
     var ticks = document.getElementById('transport-ticks')
     var analyser = null
-    // The cast cluster stands in for the molten orb: the episode's voices in one group bubble, the
-    // host in the largest seat. It keeps the orb's API, so everything below drives it unchanged.
-    var orb = window.DGCluster ? window.DGCluster.attach(transport, { cast: cast }) : null
-    if (orb) orb.setSpeaker(voiceId, null, true)
+    // The cast cluster: the episode's voices in one group bubble, the host in the largest seat.
+    var cluster = window.DGCluster ? window.DGCluster.attach(transport, { cast: cast }) : null
+    if (cluster) cluster.setSpeaker(voiceId, null, true)
 
     function connect() {
       if (analyser) return
@@ -245,7 +244,7 @@ const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin
         analyser.fftSize = 1024
         src.connect(analyser)
         analyser.connect(ac.destination)
-        if (orb) orb.setEnvSource(window.HNOrb.envelope(analyser))
+        if (cluster) cluster.setEnvSource(window.DGCluster.envelope(analyser))
         if (ac.state === 'suspended') ac.resume()
       } catch (e) {
         analyser = null   // never let the visual break playback
@@ -298,22 +297,22 @@ const AVATARS = ['alexis', 'bree', 'brittany', 'brooke', 'cliff', 'cole', 'colin
       mark.innerHTML = '&#10073;&#10073;'
       transport.setAttribute('aria-label', 'Pause')
       connect()
-      if (orb) orb.setLive(true)
+      if (cluster) cluster.setLive(true)
     })
     player.addEventListener('pause', function () {
       mark.innerHTML = '&#9654;'
       transport.setAttribute('aria-label', 'Play')
-      if (orb) orb.setLive(false)
+      if (cluster) cluster.setLive(false)
     })
-    // With a cast, the orb takes on whoever is speaking, so a handoff is visible as well as audible.
+    // With a cast, the cluster takes on whoever is speaking, so a handoff is visible as well as audible.
     var lastVoice = voiceId
     function followSpeaker() {
-      if (!orb || !multi) return
+      if (!cluster || !multi) return
       var row = document.querySelector('.seg.active')
       var v = row && row.getAttribute('data-voice')
       if (!v || v === lastVoice) return
       lastVoice = v
-      orb.setSpeaker(v, null, false)
+      cluster.setSpeaker(v, null, false)
     }
     player.addEventListener('timeupdate', function () { syncTime(); followSpeaker() })
     player.addEventListener('loadedmetadata', function () { syncTime(); placeTicks() })
